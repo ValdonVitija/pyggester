@@ -1,0 +1,3 @@
+[console_scripts]
+pyggest = pyggester.main:main
+
