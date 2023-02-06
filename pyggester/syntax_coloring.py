@@ -2,6 +2,7 @@
 from pygments import highlight
 from pygments.lexers import PythonLexer
 from pygments.formatters import TerminalFormatter
+import keyword
 
 class SyntaxHighlighter:
     def __init__(self):
@@ -9,10 +10,21 @@ class SyntaxHighlighter:
         self.formatter = TerminalFormatter()
 
     def highlight(self, code):
-        return highlight(code, self.lexer, self.formatter)
-
+        message_words = code.split(" ")
+        full_message = ""
+        for word in message_words:
+            if word.startswith("\'") or word.endswith("\'") or word.startswith('\"') or word.endswith('\"'):
+                word = highlight(word, self.lexer, self.formatter)
+                word = word.replace("\n","")
+                full_message += word + " " 
+            else: 
+                full_message += word + " "
+        return full_message
+        
     def print_(self, line_nr,code):
-        print(f"{line_nr} | {self.highlight(code)}")
+        print(f" {line_nr} | {self.highlight(code)}")
+
+
 
 
 
