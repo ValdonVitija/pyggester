@@ -11,14 +11,9 @@ class CodeSuggester:
             self.enumerate_instead_of_range_len,
             self.shorthand_arithmetic,
             self.context_managers,
-            # self.function_suggestions,
             self.possitive_check_instead_of_negative_check,
-            # self.redundant_parentheses,
-            # self.filter_instead_of_looping_with_condition,
             self.suggest_logging,
             self.use_dict_comprehension_instead_of_for_loop,
-            # self.use_any_or_all,
-            # self.use_set_for_membership,
             self.use_str_join,
             self.suggest_list_comprehension,
         ]
@@ -171,29 +166,7 @@ class CodeSuggester:
                 f"Consider using 'if not {node.test.id}:' instead of 'if {node.test.id}: pass'",
             )
 
-    # TODO: remove/refactor the following because they do not work currently
-    # def redundant_parentheses(self, node):
-    #     if (
-    #         isinstance(node, ast.BinOp)
-    #         and isinstance(node.left, ast.BinOp)
-    #         and isinstance(node.right, ast.BinOp)
-    #     ):
-    #         self.highlighter.print_(
-    #             node.lineno, "Consider removing redundant parentheses in expression"
-    #         )
 
-    # def filter_instead_of_looping_with_condition(node, highlighter):
-    #     if (
-    #         isinstance(node, ast.For)
-    #         and isinstance(node.target, ast.Name)
-    #         and isinstance(node.iter, ast.Call)
-    #         and isinstance(node.body[0], ast.If)
-    #         and isinstance(node.body[0].test, ast.Compare)
-    #     ):
-    #         highlighter.print_(
-    #             node.lineno,
-    #             "Consider using 'filter()' instead of a loop for a more concise code",
-    #         )
 
     def suggest_logging(self, node):
         if isinstance(node, ast.Try):
@@ -214,24 +187,7 @@ class CodeSuggester:
                     "Consider using logging to log any messages or errors caught in the except block.",
                 )
 
-    # def use_dict_comprehension_instead_of_for_loop(self, node):
-    #     if isinstance(node, ast.For):
-    #         if self.is_dict_assignment(node.body):
-    #             self.highlighter.print_(
-    #                 node.lineno,
-    #                 "Consider using a dictionary comprehension instead of a for loop with assignment",
-    #             )
-
-    # def is_dict_assignment(self, body):
-    #     if len(body) == 1 and isinstance(body[0], ast.Assign):
-    #         assign = body[0]
-    #         return (
-    #             isinstance(assign.targets[0], ast.Subscript)
-    #             and isinstance(assign.targets[0].value, ast.Name)
-    #             and isinstance(assign.value, ast.Call)
-    #             and isinstance(assign.value.func, ast.Name)
-    #         )
-    #     return False
+ 
 
     def use_dict_comprehension_instead_of_for_loop(self, node):
         if isinstance(node, ast.For):
@@ -250,31 +206,6 @@ class CodeSuggester:
             return True
         return False
 
-    # the following seems hard to generlize! TODO: remove/refactor because it is not functional
-    # def use_any_or_all(self, node):
-    #     if (
-    #         isinstance(node, ast.For)
-    #         and len(node.body) == 1
-    #         and isinstance(node.body[0], ast.If)
-    #         and len(node.body[0].body) == 1
-    #         and isinstance(node.body[0].body[0], ast.Return)
-    #         and isinstance(node.body[0].body[0].value, ast.NameConstant)
-    #     ):
-    #         self.highlighter.print_(
-    #             node.lineno,
-    #             "Consider using 'any()' or 'all()' built-in functions for a more concise code",
-    #         )
-    # -----------------------------------------------------------
-    # def use_str_join(self, node):
-    #     if (
-    #         isinstance(node, ast.BinOp)
-    #         and isinstance(node.op, ast.Add)
-    #         and (isinstance(node.left, ast.Str) or isinstance(node.right, ast.Str))
-    #     ):
-    #         self.highlighter.print_(
-    #             node.lineno,
-    #             "Consider using 'str.join()' method instead of concatenating strings with '+'",
-    #         )
 
     def use_str_join(self, node):
         def is_string_concatenation(node):
