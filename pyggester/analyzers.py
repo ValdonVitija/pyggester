@@ -1,6 +1,6 @@
-from _ast import Assign, ClassDef, Module
+# from _ast import Assign, ClassDef, Expr, Module
 import ast
-from typing import Any, List, Dict, ClassVar, Union
+from typing import Any, List, Dict, ClassVar, Union, Tuple
 
 code = """
 AAAAA = []
@@ -19,99 +19,242 @@ class A():
 """
 
 __all__: List[str] = [
-    "ListAnalyzer",
+    "TupleInsteadOfListAnalyzer",
     "DictAnalyzer",
     "SetAnalyzer",
     "TupleAnalyzer",
 ]
 
 
-class ListAnalyzer(ast.NodeVisitor):
+class TupleInsteadOfListAnalyzer(ast.NodeVisitor):
+    """
+    This class analyzes Python code using an ast-based approach to track lists and their modifications.
+
+    Attributes:
+        lists__: A dictionary to store information about identified lists in the code.
+        messages__: A dictionary to store messages related to the analysis.
+        current_module: The current module being analyzed.
+        current_class: The current class being analyzed.
+        current_function: The current function being analyzed.
+    """
+
+    __slots__: ClassVar[Tuple[str]] = (
+        "lists__",
+        "message__",
+        "current_module",
+        "current_class",
+        "current_function",
+    )
+
     def __init__(self):
-        self.lists__: Dict[str, Dict[str, Union[str, int, bool]]] = {}
-        self.messages__: Dict[str, Union[str, int]] = {}
-
-    # def visit(self, node):
-    # self.generic_visit(node)
-
-    def visit_Module(self, node: Module) -> Any:
-        print(ast.dump(node, indent=4))
-        self.visit_scope(node)
-        # self.generic_visit(node)
-
-    def visit_ClassDef(self, node: ClassDef) -> Any:
-        self.generic_visit(node)
-
-    def visit_FunctionDef(self, node):
-        self.visit_scope(node)
-        self.generic_visit(node)
-
-    def visit_For(self, node):
-        self.visit_scope(node)
-        self.generic_visit(node)
-
-    def visit_While(self, node):
-        self.visit_scope(node)
-        self.generic_visit(node)
-
-    def visit_Assign(self, node: Assign) -> Any:
-        # self.visit_scope(node)
-        self.get_list_declarations(node)
-
-    def visit_scope(
-        self,
-        node,
-    ):
-        # print(node)
-        if isinstance(node, ast.Module):
-            pass
-        for child in ast.iter_child_nodes(node):
-            print(child)
-            self.get_list_declarations(child, root_node=node)
-        for child in ast.iter_child_nodes(node):
-            self.check_if_list_modified(child)
-
-    # def get_list_declarations(self, node, root_node):
-    #     if isinstance(node, ast.Assign):
-    #         for target in node.targets:
-    #             if isinstance(target, ast.Name) and isinstance(node.value, ast.List):
-    #                 list_name = f"{root_node.name}%{target.id}"
-    #                 self.lists__[list_name]: Dict[str, bool | int | str] = {
-    #                     "modified": False,
-    #                     "homogeneous": False,
-    #                     "line_nr": target.lineno,
-    #                 }
-
-    def get_list_declarations(self, node, root_node):
-        if isinstance(node, ast.Assign):
-            for target in node.targets:
-                if isinstance(target, ast.Name) and isinstance(node.value, ast.List):
-                    list_name = f"{root_node.name}%{target.id}"
-                    self.lists__[list_name]: Dict[str, bool | int | str] = {
-                        "modified": False,
-                        "homogeneous": False,
-                        "line_nr": target.lineno,
+        """
+                Examples:
+                    self.lists__ example:
+                    {
+                        func1_list1: {
+                            "modified": True/False,
+                            "line_nr": (int)
+                        }
                     }
 
-    def check_if_list_modified(self, node) -> None:
-        if isinstance(node, ast.Expr):
-            for list_ in self.lists__.keys():
-                if node.value.func.value.id in list_:
-                    if node.value.func.attr == "append":
+
+
+        COULD BE:
+
+        data = {
+            "module": {
+                "classes": {
+                    "class1": {
+                        "functions": {
+                            "func1": {
+                                "lists": {
+                                    "numbers_1",
+                                    "numbers_2"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        """
+        self.lists__: Dict[str, Dict[str, Union[str, int, bool]]] = {}
+        self.message__: str = "USE A TUPLE INSTEAD OF A LIST"
+        self.current_module: str = ""
+        self.current_class: str = ""
+        self.current_function: str = ""
+
+    def visit_Module(self, node: ast.Module) -> Any:
+        """
+        Visit a Module node in the AST.
+
+        Args:
+            node: The Module node in the AST.
+
+        Returns:
+            Any
+        """
+        self.generic_visit(node)
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> Any:
+        """
+        Visit a ClassDef node in the AST.
+        Since for each python module in the analysis this class will be initialized, this method
+        should set the current class being analyzed by the ast module, to help us construct
+        a unique name for each list
+        Args:
+            node: The ClassDef node in the AST.
+
+        Returns:
+            Any
+        """
+        self.current_class: str = node.name
+        self.generic_visit(node)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        """
+        Visit a FunctionDef node in the AST.
+        Since for each python module in the analysis this class will be initialized, this method
+        should set the current function being analyzed by the ast module, to help us construct
+        a unique name for each list
+        Args:
+            node: The FunctionDef node in the AST.
+
+        Returns:
+            Any
+        """
+        self.current_function: str = node.name
+        self.generic_visit(node)
+
+    def visit_For(self, node: ast.For) -> Any:
+        """
+        Visit a For node in the AST.
+
+        Args:
+            node: The For node in the AST.
+
+        Returns:
+            Any
+        """
+        self.generic_visit(node)
+
+    def visit_While(self, node: ast.While) -> Any:
+        """
+        Visit a While node in the AST.
+
+        Args:
+            node: The While node in the AST.
+
+        Returns:
+            Any
+        """
+        self.generic_visit(node)
+
+    def visit_Assign(self, node: ast.Assign) -> Any:
+        """
+        Visit an Assign node in the AST.
+
+        Args:
+            node: The Assign node in the AST.
+
+        Returns:
+            Any
+        """
+        for target in node.targets:
+            if isinstance(target, ast.Name) and isinstance(node.value, ast.List):
+                list_name = f"{self.current_module}%{self.current_class}%{self.current_function}%{target.id}"
+                self.lists__[list_name]: Dict[str, bool | int | str] = {
+                    "modified": False,
+                    "line_nr": target.lineno,
+                }
+
+            if isinstance(target, ast.Subscript):
+                for list_ in self.lists__.keys():
+                    if target.value.id in list_:
                         self.lists__[list_]["modified"] = True
 
-        elif isinstance(node, ast.Assign):
-            for target in node.targets:
-                if isinstance(target, ast.Subscript):
-                    for list_ in self.lists__.keys():
-                        if target.value.id in list_:
-                            self.lists__[list_]["modified"] = True
+    def visit_Expr(self, node: ast.Expr) -> Any:
+        """
+        Visit an Expr node in the AST.
+
+        Args:
+            node: The Expr node in the AST.
+
+        Returns:
+            Any
+        """
+        for list_ in self.lists__.keys():
+            if node.value.func.value.id in list_:
+                if node.value.func.attr == "append":
+                    self.lists__[list_]["modified"] = True
 
     def print_messages(self):
         for key, value in self.lists__.items():
-            print(f"List: {key}")
             if not value["modified"]:
-                print(f"List: {key.split('%')[-1]} not modified, use a tuple instead!")
+                print(f"Line nr: {value['line_nr']} | {self.message__}")
+
+
+# class ListAnalyzer(ast.NodeVisitor):
+#     __slots__: ClassVar[Tuple[str]] = (
+#         "lists__",
+#         "messages__",
+#         "current_module",
+#         "current_class",
+#         "current_function",
+#     )
+
+#     def __init__(self):
+#         self.lists__: Dict[str, Dict[str, Union[str, int, bool]]] = {}
+#         self.messages__: Dict[str, Union[str, int]] = {}
+#         self.current_module: str = ""
+#         self.current_class: str = ""
+#         self.current_function: str = ""
+
+#     def visit_Module(self, node: ast.Module) -> Any:
+#         self.generic_visit(node)
+
+#     def visit_ClassDef(self, node: ast.ClassDef) -> Any:
+#         self.current_class: str = node.name
+#         self.generic_visit(node)
+
+#     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+#         self.current_function: str = node.name
+#         self.generic_visit(node)
+
+#     def visit_For(self, node: ast.For) -> Any:
+#         self.generic_visit(node)
+
+#     def visit_While(self, node: ast.While) -> Any:
+#         self.generic_visit(node)
+
+#     def visit_Assign(self, node: ast.Assign) -> Any:
+#         for target in node.targets:
+#             if isinstance(target, ast.Name) and isinstance(node.value, ast.List):
+#                 list_name = f"{self.current_module}%{self.current_class}%{self.current_function}%{target.id}"
+#                 self.lists__[list_name]: Dict[str, bool | int | str] = {
+#                     "modified": False,
+#                     "homogeneous": False,
+#                     "line_nr": target.lineno,
+#                 }
+
+#             if isinstance(target, ast.Subscript):
+#                 for list_ in self.lists__.keys():
+#                     if target.value.id in list_:
+#                         self.lists__[list_]["modified"] = True
+
+#     def visit_Expr(self, node: ast.Expr) -> Any:
+#         for list_ in self.lists__.keys():
+#             if node.value.func.value.id in list_:
+#                 if node.value.func.attr == "append":
+#                     self.lists__[list_]["modified"] = True
+
+
+#     def print_messages(self):
+#         for key, value in self.lists__.items():
+#             # print(f"List: {key}")
+#             if not value["modified"]:
+#                 print(f"List: {key.split('%')[-1]} not modified, use a tuple instead!")
 
 
 class DictAnalyzer(ast.NodeVisitor):
@@ -161,7 +304,7 @@ class TupleAnalyzer(ast.NodeVisitor):
 
 tree = ast.parse(code)
 
-visitor = ListAnalyzer()
+visitor = TupleInsteadOfListAnalyzer()
 
 visitor.visit(tree)
 visitor.print_messages()

@@ -4,7 +4,7 @@ import ast
 # from pyggester.syntax_coloring import SyntaxHighlighter
 # import array
 from typing import Dict, List, Any, Type
-from pyggester.analyzers import ListAnalyzer, DictAnalyzer
+from pyggester.analyzers import TupleInsteadOfListAnalyzer, DictAnalyzer
 
 
 # class CodeSuggester:
