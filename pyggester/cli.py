@@ -1,166 +1,100 @@
 """
-This cli app is technically a composition of typer CLI apps.
 The structure of this CLI app based on typer:
-    app (typer):
-        report (typer):
-            generate OPTIONS
-            inject OPTIONS
-        device (typer):
-            commands OPTIONS
-
-
-If you need a command that contains subcommands, you have to declare it as a class that has an instance of the typer module
-This means that you can compose typer instances with one another in a super scalable way.
-For example:
-    The App Class represents the root of this CLI app and it is a typer itself because it will contain other commands(subcommands).
-    The Report Class is a typer on its own because it is a command(subcommand of app) that will contain other commands(subcommands).
-    The Deivce Class is a typer on its own because it as a command(subcommand of app) that will contain other commands(subcommands).
-
-Basically whenever you need to group commands within a command you create a class that represents a typer cli app on its own.
+    app (typer) - pyggest:
+        static - subcommand:
+            Options: ...
+        dynamic - subcommand
+            Options: ...
 """
 
 from functools import lru_cache
-from typing import List, Tuple
+from typing import List
 import typer
 from typing_extensions import Annotated
+from pyggester.command_handlers import PyggestDynamic, PyggestStatic
 
-__all__: List[str] = []
+__all__: List[str] = ["get_app"]
 
 app = typer.Typer(no_args_is_help=True)
-report_app = typer.Typer(no_args_is_help=True)
-device_app = typer.Typer(no_args_is_help=True)
+
+"""
+    The following function represents the 'static' subcommand.
+    If you need to add more options under this subcommand,
+    just add another parameter in the end, but make sure 
+    to handle that option properly
+"""
 
 
-@device_app.command(no_args_is_help=True, name="inject")
-def device_inject(
-    database: Annotated[
+@app.command(no_args_is_help=True, name="static")
+def static_analysis(
+    path_: Annotated[
         str, typer.Option("--database", help="Database connection string")
     ] = None,
-    user: Annotated[str, typer.Option("--user", help="Database username")] = None,
-    password: Annotated[
-        str, typer.Option("--password", help="Database password")
-    ] = None,
-    node_query_file: Annotated[
-        str,
-        typer.Option("--node_query_file", help="Node query file to be injected"),
-    ] = None,
-    dir_path: Annotated[
-        str,
+    LISTS_: Annotated[
+        bool,
         typer.Option(
-            "--node_query_dir",
-            help="Directory path to inject all the node query files that exist in it",
+            "--lists",
+            help="Use this option to include lists in analysis",
         ),
-    ] = None,
-    _id: Annotated[
-        str,
+    ] = False,
+    DICTS_: Annotated[
+        bool,
         typer.Option(
-            "--id",
-            help="The id of the new document. This refers to the device name / CLLI",
+            "--dicts",
+            help="Use this option to include dicts in analysis",
         ),
-    ] = None,
-    NE_CATEGORY: Annotated[
-        str,
+    ] = False,
+    SETS_: Annotated[
+        bool,
         typer.Option(
-            "--category",
-            "--ne-category",
-            "--NE_CATEGORY",
-            help="Use this option to get the device category",
+            "--sets",
+            help="Use this option to include sets in analysis",
         ),
-    ] = None,
-    NE_SUBTYPE: Annotated[
-        str,
+    ] = False,
+    TUPLES_: Annotated[
+        bool,
         typer.Option(
-            "--subtype",
-            "--ne-subtype",
-            "--NE_SUBTYPE",
-            help="Use this option to get the subtype of device",
+            "--tuples",
+            help="Use this option to include tuples in analysis",
         ),
-    ] = None,
-    NE_Location_CLLI: Annotated[
-        str,
+    ] = False,
+    all_: Annotated[
+        bool,
         typer.Option(
-            "--location",
-            "--ne-location",
-            "--NE_Location_CLLI",
-            help="Use this option to get the device location",
+            "--all",
+            help="If you want pyggester to use all its capabilites use this option",
         ),
-    ] = None,
-    NE_MGMT_IP: Annotated[
-        str,
-        typer.Option(
-            "--ip",
-            "--ip-address",
-            "--ne-ip-address",
-            "--NE_MGMT_IP",
-            help="Use this option to get the device IP",
-        ),
-    ] = None,
-    NE_VENDOR: Annotated[
-        str,
-        typer.Option(
-            "--vendor",
-            "--ne-vendor",
-            "--NE_VENDOR",
-            help="Use this option to get the device vendor",
-        ),
-    ] = None,
-    NE_MODEL: Annotated[
-        str,
-        typer.Option(
-            "--model",
-            "--ne-model",
-            "--NE_MODEL",
-            help="Use this option to get the device model",
-        ),
-    ] = None,
-    NE_SW_VERSION: Annotated[
-        str,
-        typer.Option(
-            "--software-version",
-            "--sv",
-            "--sw-version",
-            "--NE_SW_VERSION",
-            help="Use this option to get the device software version",
-        ),
-    ] = None,
-    GNE_ID: Annotated[str, typer.Option("--GNE_ID")] = None,
-    GNE_MGMT_IP: Annotated[str, typer.Option("--GNE_MGMT_IP")] = None,
-    NE_MOA: Annotated[
-        str,
-        typer.Option(
-            "--moa",
-            "--ne-moa",
-            "--NE_MOA",
-            help="Use this option to get the device moa",
-        ),
-    ] = None,
-    NE_Description: Annotated[
-        str,
-        typer.Option(
-            "--desc",
-            "--description",
-            "--ne-description",
-            "--NE_Description",
-            help="Use this option to get device description",
-        ),
-    ] = None,
-    NE_SN: Annotated[str, typer.Option("--NE_SN")] = None,
-    device_file: Annotated[
-        str,
-        typer.Option(
-            "--device_file",
-            help="Inject a new device based on a file that represents the device by key, value pairs(field=value)",
-        ),
-    ] = None,
-    device_dir: Annotated[
-        str,
-        typer.Option(
-            "--device_dir",
-            help="Inject new devices based on a dir that contains files that represent devices by key, value pairs(field=value)",
-        ),
-    ] = None,
+    ] = False,
     HELP_: Annotated[
         bool, typer.Option("--HELP", help="Get full documentation")
     ] = False,
 ):
-    pass
+    command_handler = PyggestStatic(
+        path_=path_,
+        LISTS_=LISTS_,
+        DICTS_=DICTS_,
+        SETS_=SETS_,
+        TUPLES_=TUPLES_,
+        all_=all_,
+        HELP_=HELP_,
+    )
+    command_handler.process()
+
+
+"""
+    The following function represents the 'dynamic' subcommand.
+    If you need to add more options under this subcommand,
+    just add another parameter in the end, but make sure 
+    to handle that option properly
+"""
+
+
+@app.command(no_args_is_help=True, name="dynamic")
+def dynamic_analysis():
+    command_handler = PyggestDynamic()
+    command_handler.process()
+
+
+@lru_cache
+def get_app():
+    return app()
