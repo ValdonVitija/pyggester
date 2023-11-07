@@ -12,17 +12,11 @@ from typing import List
 import typer
 from typing_extensions import Annotated
 from pyggester.command_handlers import PyggestDynamic, PyggestStatic
+from pyggester.helpers import not_implemented
 
 __all__: List[str] = ["get_app"]
 
 app = typer.Typer(no_args_is_help=True)
-
-"""
-    The following function represents the 'static' subcommand.
-    If you need to add more options under this subcommand,
-    just add another parameter in the end, but make sure 
-    to handle that option properly
-"""
 
 
 @app.command(no_args_is_help=True, name="static")
@@ -69,6 +63,26 @@ def static_analysis(
         bool, typer.Option("--HELP", help="Get full documentation")
     ] = False,
 ):
+    """
+    NOTE: This function represents the 'static' subcommand of pyggest
+
+    Perform static analysis using PyggestStatic.
+
+    This command allows you to perform static analysis using PyggestStatic, a tool for
+    analyzing Python code. You can specify various options to customize the analysis.
+
+    Args:
+        path_ (str): Database connection string.
+        LISTS_ (bool): Whether to include lists in the analysis.
+        DICTS_ (bool): Whether to include dicts in the analysis.
+        SETS_ (bool): Whether to include sets in the analysis.
+        TUPLES_ (bool): Whether to include tuples in the analysis.
+        all_ (bool): If True, use all available analysis capabilities.
+        HELP_ (bool): If True, get full documentation.
+
+    Returns:
+        None
+    """
     command_handler = PyggestStatic(
         path_=path_,
         LISTS_=LISTS_,
@@ -81,16 +95,21 @@ def static_analysis(
     command_handler.process()
 
 
-"""
-    The following function represents the 'dynamic' subcommand.
-    If you need to add more options under this subcommand,
-    just add another parameter in the end, but make sure 
-    to handle that option properly
-"""
-
-
+@not_implemented
 @app.command(no_args_is_help=True, name="dynamic")
 def dynamic_analysis():
+    """
+    Perform dynamic analysis using PyggestDynamic.
+
+    This command allows you to perform dynamic analysis using PyggestDynamic, a tool for
+    analyzing Python code at runtime.
+
+    Args:
+        ...
+
+    Returns:
+        None
+    """
     command_handler = PyggestDynamic()
     command_handler.process()
 

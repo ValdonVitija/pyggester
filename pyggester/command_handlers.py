@@ -6,16 +6,11 @@ from typing import Dict, List, ClassVar, Union
 from rich.console import Console
 from rich.markdown import Markdown
 from pyggester.text_formatters import custom_print
+from pyggester.helpers import get_help_files_dir
 
 __all__: List[str] = ["PyggestStatic", "PyggestDynamic"]
 
-README_FILES_DIR: type[pathlib.Path] = pathlib.Path(
-    os.path.join(
-        pathlib.Path(__file__).parent,
-        "data",
-        "help_files",
-    )
-)
+README_FILES_DIR: pathlib.Path = get_help_files_dir()
 
 
 class CommandHandler(abc.ABC):
@@ -32,6 +27,17 @@ class CommandHandler(abc.ABC):
         ...
 
     def handle_HELP_(self) -> Union[None, typer.Exit]:
+        """
+        Handle the --HELP option by displaying the README file.
+
+        If the --HELP option is specified, this function reads and displays the README file
+        using the Rich library's Console and Markdown features. It then raises a Typer Exit
+        to terminate the program, because if the --HELP option gets used no other operation
+        should take place
+
+        Returns:
+            Union[None, Exit]: None if the function doesn't return anything, or a Typer Exit object.
+        """
         if self.HELP_:
             console = Console()
             with open(os.path.join(README_FILES_DIR, self.README)) as readme:
@@ -40,6 +46,12 @@ class CommandHandler(abc.ABC):
                 raise typer.Exit()
 
     def handle_no_valid_combination(self) -> Union[None, typer.Exit]:
+        """
+        Handle the case when there is no valid combination/usage of options.
+
+        This function displays an error message using the custom_print function and raises
+        a Typer Exit to terminate the program.
+        """
         custom_print(
             "No valid combination/usage of options! Try --help or --HELP",
             border_style="red",
@@ -74,7 +86,7 @@ class PyggestStatic(CommandHandler):
         all_: bool,
         HELP_: bool,
     ) -> None:
-        self.path_: pathlib.Path = pathlib.Path(path_)
+        self.path_ = pathlib.Path(path_)
         self.LISTS_: bool = LISTS_
         self.DICTS_: bool = DICTS_
         self.SETS_: bool = SETS_

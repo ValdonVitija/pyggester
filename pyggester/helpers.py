@@ -2,6 +2,7 @@ import pathlib
 import os
 from typing import List, Union
 import ast
+from functools import lru_cache
 
 
 def fetch_files(path: Union[str, None]) -> List[str]:
@@ -54,6 +55,47 @@ def save_file_content_as_str_(file_path: pathlib.Path, ret_files: List[str]) -> 
 
     except FileNotFoundError as err__:
         print(err__)
+
+
+@lru_cache
+def get_help_files_dir() -> pathlib.Path:
+    """
+    Get the directory path where help files are located.
+
+    This function returns the directory path as a pathlib.Path object.
+    The directory is determined relative to the location of the current script.
+
+    Returns:
+        pathlib.Path: The directory path for help files.
+    """
+    help_files_dir = pathlib.Path(
+        os.path.join(
+            pathlib.Path(__file__).parent,
+            "data",
+            "help_files",
+        )
+    )
+    return help_files_dir
+
+
+def not_implemented(func):
+    """
+    Decorator to flag a function as not yet implemented.
+
+    This decorator raises a NotImplementedError when the decorated function is called,
+    indicating that the function is not yet fully implemented.
+
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: A wrapper function that raises a NotImplementedError.
+    """
+
+    def wrapper(*args, **kwargs):
+        raise NotImplementedError(f"{func.__name__} is not yet implemented")
+
+    return wrapper
 
 
 if __name__ == "__main__":
