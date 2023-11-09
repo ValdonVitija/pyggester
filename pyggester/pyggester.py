@@ -3,8 +3,51 @@ import ast
 # from collections import defaultdict
 # from pyggester.syntax_coloring import SyntaxHighlighter
 # import array
-from typing import Dict, List, Any, Type
-from pyggester.analyzers import TupleInsteadOfListAnalyzer, DictAnalyzer
+from typing import Dict, List, Any, Type, ClassVar, Set
+from pyggester.analyzers import get_analyzers, AnalyzersModel, Analyzer
+
+# from pyggester.analyzers import TupleInsteadOfListAnalyzer, DictAnalyzer
+
+
+class Pyggester:
+    def __init__(self) -> None:
+        self.analyzers: AnalyzersModel = get_analyzers()
+
+    # def add_analyzer(self, analyzer):
+    #     """
+    #     Add an analyzer to the handler.
+
+    #     Args:
+    #         analyzer (Analyzer): An instance of the Analyzer class.
+    #     """
+    #     grouper = analyzer.grouper
+    #     if grouper not in self.analyzers:
+    #         self.analyzers[grouper] = []
+    #     self.analyzers[grouper].append(analyzer)
+
+    def initialize_analyzers(self, data_structure):
+        """
+        Initialize and apply analyzers based on the type of data_structure.
+
+        Args:
+            data_structure: The data structure to be analyzed.
+        """
+        data_structure_type = type(data_structure).__name__
+        if data_structure_type in self.analyzers:
+            for analyzer in self.analyzers[data_structure_type]:
+                analyzer.analyze(data_structure)
+                analyzer.optimize(data_structure)
+
+
+# class Pyggester:
+#     """
+#     This class serves as the main pyggester mechanism, that glues everthing together
+#     """
+
+#     __slots__: ClassVar[Set[str]] = {}
+
+#     def __init__(self) -> None:
+#         pass
 
 
 # class CodeSuggester:

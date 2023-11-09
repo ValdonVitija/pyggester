@@ -1,7 +1,11 @@
 # from _ast import Assign, ClassDef, Expr, Module
-import ast
 import abc
-from typing import Any, List, Dict, ClassVar, Union, Set
+import ast
+import pathlib
+from typing import Any, ClassVar, Dict, List, Set, Type, Union
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
+
 
 code = """
 AAAAA = []
@@ -27,11 +31,38 @@ __all__: List[str] = [
 ]
 
 
+class PathConfig(BaseModel):
+    """
+    Represents a specific path to the data structure starting from the highest level.
+
+    The path can take various forms:
+    - For the current module, it includes the full path from the root directory (repository directory level).
+    This is represented as a `pathlib.Path` object instead of a string.
+
+    Possible variations:
+    - [*] Module
+    - [*] Module -> Function
+    - [*] Module -> Class -> Function
+    """
+
+    # current_module: Annotated[pathlib.Path, Field(default=pathlib.Path(""))]
+    current_module: Annotated[str, Field(default="")]
+    current_class: Annotated[str, Field(default="")]
+    current_function: Annotated[str, Field(default="")]
+
+
 class Analyzer(abc.ABC):
     """
-    This abstract class represents an analyzer. Each specific analyzer will
-    have to derive from this class. It offers common analyzer traits.
-    Each Analyzer attacks a specific unoptimal usage of a datastructure.
+    Abstract base class for data structure analyzers. Derive specific analyzers
+    from this class to address suboptimal usage patterns in data structures.
+
+    This class defines common traits for analyzers, each designed to identify
+    and rectify specific inefficiencies within data structures. Analyzers play
+    a crucial role in optimizing and enhancing the performance of data-related
+    operations by pinpointing and addressing unoptimal usage.
+
+    To create a new analyzer, inherit from this class and implement the
+    necessary methods to analyze and optimize the targeted data structure.
 
     Attributes:
         structures__: A dictionary to store information about identified lists in the code.
@@ -39,35 +70,14 @@ class Analyzer(abc.ABC):
         current_module: The current module being analyzed.
         current_class: The current class being analyzed.
         current_function: The current function being analyzed.
-    """
-
-    # __slots__: ClassVar[Set[str]] = {
-    #     "structures__",
-    #     "message__",
-    #     "current_module",
-    #     "current_class",
-    #     "current_function",
-    # }
-
-    # # NOTE: The following is just a work around for __slots__ not being part of the class inheritance contract
-
-    # def __setattr__(self, __name: str, __value: Any) -> None:
-    #     if __name not in self.__slots__:
-    #         raise AttributeError(
-    #             f"'{self.__class__.__name__}' object has no attribute '{__name}'"
-    #         )
-    #     super().__setattr__(__name, __value)
-
-    def __init__(self, message__, current_module, current_class, current_function):
-        """
-                Examples:
-                    self.structures__ example:
-                    {
-                        func1_list1: {
-                            "modified": True/False,
-                            "line_nr": (int)
-                        }
+    ---------------------------------------------------------------------------------
+    Examples:
+    structures__ = {
+            func1_list1: {
+                    "modified": True/False,
+                    "line_nr": (int)
                     }
+                }
 
 
 
@@ -89,13 +99,29 @@ class Analyzer(abc.ABC):
                 }
             }
         }
+    """
 
-        """
+    # __slots__: ClassVar[Set[str]] = {
+    #     "structures__",
+    #     "message__",
+    #     "current_module",
+    #     "current_class",
+    #     "current_function",
+    # }
+
+    # # NOTE: The following is just a work around for __slots__ not being part of the class inheritance contract
+
+    # def __setattr__(self, __name: str, __value: Any) -> None:
+    #     if __name not in self.__slots__:
+    #         raise AttributeError(
+    #             f"'{self.__class__.__name__}' object has no attribute '{__name}'"
+    #         )
+    #     super().__setattr__(__name, __value)
+
+    def __init__(self, message__, pathconfig: PathConfig):
         self.structures__: Dict[str, Dict[str, Union[str, int, bool]]] = {}
         self.message__: str = message__
-        self.current_module: str = current_module
-        self.current_class: str = current_class
-        self.current_function: str = current_function
+        self.pathconfig: PathConfig = pathconfig
 
 
 class TupleInsteadOfListAnalyzer(Analyzer, ast.NodeVisitor):
@@ -115,10 +141,7 @@ class TupleInsteadOfListAnalyzer(Analyzer, ast.NodeVisitor):
 
     def __init__(self):
         super().__init__(
-            message__="USE A TUPLE INSTEAD OF A LIST",
-            current_module="",
-            current_class="",
-            current_function="",
+            message__="USE A TUPLE INSTEAD OF A LIST", pathconfig=PathConfig()
         )
 
     def visit_Module(self, node: ast.Module) -> Any:
@@ -145,7 +168,7 @@ class TupleInsteadOfListAnalyzer(Analyzer, ast.NodeVisitor):
         Returns:
             Any
         """
-        self.current_class: str = node.name
+        self.pathconfig.current_class: str = node.name
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
@@ -160,7 +183,7 @@ class TupleInsteadOfListAnalyzer(Analyzer, ast.NodeVisitor):
         Returns:
             Any
         """
-        self.current_function: str = node.name
+        self.pathconfig.current_function: str = node.name
         self.generic_visit(node)
 
     def visit_For(self, node: ast.For) -> Any:
@@ -199,7 +222,7 @@ class TupleInsteadOfListAnalyzer(Analyzer, ast.NodeVisitor):
         """
         for target in node.targets:
             if isinstance(target, ast.Name) and isinstance(node.value, ast.List):
-                list_name = f"{self.current_module}%{self.current_class}%{self.current_function}%{target.id}"
+                list_name = f"{self.pathconfig.current_module}%{self.pathconfig.current_class}%{self.pathconfig.current_function}%{target.id}"
                 self.structures__[list_name]: Dict[str, bool | int | str] = {
                     "modified": False,
                     "line_nr": target.lineno,
@@ -231,7 +254,7 @@ class TupleInsteadOfListAnalyzer(Analyzer, ast.NodeVisitor):
                 print(f"Line nr: {value['line_nr']} | {self.message__}")
 
 
-class NumpyInsteadOfListForMatrices(ast.NodeVisitor):
+class NumpyInsteadOfListForMatrices(Analyzer, ast.NodeVisitor):
     """
     NumpyInsteadOfListForMatrices will be used to analyse the usage of the list datastructure to represent
     a matrix instead of using a numpy. Numpy offers a better matrix manipulation api. Faster, simpler, more readable.
@@ -248,13 +271,11 @@ class NumpyInsteadOfListForMatrices(ast.NodeVisitor):
     def __init__(self):
         super().__init__(
             message__="USE A NUMPY INSTEAD OF A LIST FOR MATRIX REPRESENATION AND MANIPULATION",
-            current_module="",
-            current_class="",
-            current_function="",
+            pathconfig=PathConfig(),
         )
 
 
-class DictAnalyzer(ast.NodeVisitor):
+class DictAnalyzer(Analyzer, ast.NodeVisitor):
     """
     DictAnalyzer will be used to analyse the usage of the dict datastructure through your code.
     This class supports the following suggestions:
@@ -269,15 +290,10 @@ class DictAnalyzer(ast.NodeVisitor):
     }
 
     def __init__(self):
-        super().__init__(
-            message__="",
-            current_module="",
-            current_class="",
-            current_function="",
-        )
+        super().__init__(message__="", pathconfig=PathConfig())
 
 
-class SetAnalyzer(ast.NodeVisitor):
+class SetAnalyzer(Analyzer, ast.NodeVisitor):
     """
     SetAnalyzer will be used to analyse the usage of the set datastructure through your code.
     This class supports the following suggestions:
@@ -292,15 +308,10 @@ class SetAnalyzer(ast.NodeVisitor):
     }
 
     def __init__(self):
-        super().__init__(
-            message__="",
-            current_module="",
-            current_class="",
-            current_function="",
-        )
+        super().__init__(message__="", pathconfig=PathConfig())
 
 
-class TupleAnalyzer(ast.NodeVisitor):
+class TupleAnalyzer(Analyzer, ast.NodeVisitor):
     """
     TupleAnalyzer will be used to analyse the usage of the tuple datastructure through your code.
     This class supports the following suggestions:
@@ -315,12 +326,89 @@ class TupleAnalyzer(ast.NodeVisitor):
     }
 
     def __init__(self):
-        super().__init__(
-            message__="",
-            current_module="",
-            current_class="",
-            current_function="",
-        )
+        super().__init__(message__="", pathconfig=PathConfig())
+
+
+# def get_analyzers():
+#     """
+#     Instead of having to import each analyzer on its own from the pyggester module,
+#     we instead construct a structure that represents all different analyzer categories
+#     """
+#     analyzers = {
+#         "lists": {
+#             TupleInsteadOfListAnalyzer,
+#         },
+#         "dicts": {
+#             DictAnalyzer,
+#         },
+#         "sets": {},
+#         "tuples": {},
+#         "namedtuples": {},
+#         "queues": {},
+#         "arrays": {},
+#         "deques": {},
+#         "strings": {},
+#     }
+#     return analyzers
+
+
+class AnalyzerCategory(BaseModel):
+    """
+    Represents the overall category for analyzers.
+    Categories:
+        - lists
+        - dicts
+        - sets
+        - tuples
+        - namedtuples
+        - queues
+        - arrays
+        - deques
+        - strings
+    """
+
+    analyzer_types: set[Type]
+
+
+class AnalyzersModel(BaseModel):
+    """
+    Represents each analyzer specifically
+    """
+
+    lists: Annotated[AnalyzerCategory, "Analyzers for Lists"] = {
+        "analyzer_types": {TupleInsteadOfListAnalyzer}
+    }
+    dicts: Annotated[AnalyzerCategory, "Analyzers for Dicts"] = {
+        "analyzer_types": {DictAnalyzer}
+    }
+    sets: Annotated[AnalyzerCategory, "Analyzers for Sets"] = {"analyzer_types": set()}
+    tuples: Annotated[AnalyzerCategory, "Analyzers for Tuples"] = {
+        "analyzer_types": set()
+    }
+    namedtuples: Annotated[AnalyzerCategory, "Analyzers for NamedTuples"] = {
+        "analyzer_types": set()
+    }
+    queues: Annotated[AnalyzerCategory, "Analyzers for Queues"] = {
+        "analyzer_types": set()
+    }
+    arrays: Annotated[AnalyzerCategory, "Analyzers for Arrays"] = {
+        "analyzer_types": set()
+    }
+    deques: Annotated[AnalyzerCategory, "Analyzers for Deques"] = {
+        "analyzer_types": set()
+    }
+    strings: Annotated[AnalyzerCategory, "Analyzers for Strings"] = {
+        "analyzer_types": set()
+    }
+
+
+def get_analyzers() -> AnalyzersModel:
+    """
+    Instead of having to import each analyzer on its own from the pyggester module,
+    we instead construct a structure that represents all different analyzer categories
+    """
+    analyzers = AnalyzersModel()
+    return analyzers
 
 
 tree = ast.parse(code)

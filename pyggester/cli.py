@@ -116,4 +116,7 @@ def dynamic_analysis():
 
 @lru_cache
 def get_app():
+    """
+    Get the main typer cli app
+    """
     return app()

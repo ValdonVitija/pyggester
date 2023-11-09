@@ -21,7 +21,7 @@ with open("requirements.txt", "r", encoding="UTF-8") as f_stream:
 #     include_package_data=True,
 # )
 
-
+# NOTE ADD THE
 setuptools.setup(
     name="pyggester",
     version="1.0.0",
