@@ -1,6 +1,7 @@
 # from _ast import Assign, ClassDef, Expr, Module
 import ast
-from typing import Any, List, Dict, ClassVar, Union, Tuple
+import abc
+from typing import Any, List, Dict, ClassVar, Union, Set
 
 code = """
 AAAAA = []
@@ -26,30 +27,41 @@ __all__: List[str] = [
 ]
 
 
-class TupleInsteadOfListAnalyzer(ast.NodeVisitor):
+class Analyzer(abc.ABC):
     """
-    This class analyzes Python code using an ast-based approach to track lists and their modifications.
+    This abstract class represents an analyzer. Each specific analyzer will
+    have to derive from this class. It offers common analyzer traits.
+    Each Analyzer attacks a specific unoptimal usage of a datastructure.
 
     Attributes:
-        lists__: A dictionary to store information about identified lists in the code.
+        structures__: A dictionary to store information about identified lists in the code.
         messages__: A dictionary to store messages related to the analysis.
         current_module: The current module being analyzed.
         current_class: The current class being analyzed.
         current_function: The current function being analyzed.
     """
 
-    __slots__: ClassVar[Tuple[str]] = (
-        "lists__",
-        "message__",
-        "current_module",
-        "current_class",
-        "current_function",
-    )
+    # __slots__: ClassVar[Set[str]] = {
+    #     "structures__",
+    #     "message__",
+    #     "current_module",
+    #     "current_class",
+    #     "current_function",
+    # }
 
-    def __init__(self):
+    # # NOTE: The following is just a work around for __slots__ not being part of the class inheritance contract
+
+    # def __setattr__(self, __name: str, __value: Any) -> None:
+    #     if __name not in self.__slots__:
+    #         raise AttributeError(
+    #             f"'{self.__class__.__name__}' object has no attribute '{__name}'"
+    #         )
+    #     super().__setattr__(__name, __value)
+
+    def __init__(self, message__, current_module, current_class, current_function):
         """
                 Examples:
-                    self.lists__ example:
+                    self.structures__ example:
                     {
                         func1_list1: {
                             "modified": True/False,
@@ -61,7 +73,7 @@ class TupleInsteadOfListAnalyzer(ast.NodeVisitor):
 
         COULD BE:
 
-        data = {
+        structures__ = {
             "module": {
                 "classes": {
                     "class1": {
@@ -79,11 +91,35 @@ class TupleInsteadOfListAnalyzer(ast.NodeVisitor):
         }
 
         """
-        self.lists__: Dict[str, Dict[str, Union[str, int, bool]]] = {}
-        self.message__: str = "USE A TUPLE INSTEAD OF A LIST"
-        self.current_module: str = ""
-        self.current_class: str = ""
-        self.current_function: str = ""
+        self.structures__: Dict[str, Dict[str, Union[str, int, bool]]] = {}
+        self.message__: str = message__
+        self.current_module: str = current_module
+        self.current_class: str = current_class
+        self.current_function: str = current_function
+
+
+class TupleInsteadOfListAnalyzer(Analyzer, ast.NodeVisitor):
+    """
+    This class analyzes Python code using an ast-based approach to analyze
+    when a list has been used instead of a tuple
+
+    """
+
+    __slots__: ClassVar[Set[str]] = {
+        "structures__",
+        "message__",
+        "current_module",
+        "current_class",
+        "current_function",
+    }
+
+    def __init__(self):
+        super().__init__(
+            message__="USE A TUPLE INSTEAD OF A LIST",
+            current_module="",
+            current_class="",
+            current_function="",
+        )
 
     def visit_Module(self, node: ast.Module) -> Any:
         """
@@ -164,15 +200,15 @@ class TupleInsteadOfListAnalyzer(ast.NodeVisitor):
         for target in node.targets:
             if isinstance(target, ast.Name) and isinstance(node.value, ast.List):
                 list_name = f"{self.current_module}%{self.current_class}%{self.current_function}%{target.id}"
-                self.lists__[list_name]: Dict[str, bool | int | str] = {
+                self.structures__[list_name]: Dict[str, bool | int | str] = {
                     "modified": False,
                     "line_nr": target.lineno,
                 }
 
             if isinstance(target, ast.Subscript):
-                for list_ in self.lists__.keys():
+                for list_, _ in self.structures__.items():
                     if target.value.id in list_:
-                        self.lists__[list_]["modified"] = True
+                        self.structures__[list_]["modified"] = True
 
     def visit_Expr(self, node: ast.Expr) -> Any:
         """
@@ -184,77 +220,38 @@ class TupleInsteadOfListAnalyzer(ast.NodeVisitor):
         Returns:
             Any
         """
-        for list_ in self.lists__.keys():
+        for list_, _ in self.structures__.items():
             if node.value.func.value.id in list_:
                 if node.value.func.attr == "append":
-                    self.lists__[list_]["modified"] = True
+                    self.structures__[list_]["modified"] = True
 
     def print_messages(self):
-        for key, value in self.lists__.items():
+        for _, value in self.structures__.items():
             if not value["modified"]:
                 print(f"Line nr: {value['line_nr']} | {self.message__}")
 
 
-# class ListAnalyzer(ast.NodeVisitor):
-#     __slots__: ClassVar[Tuple[str]] = (
-#         "lists__",
-#         "messages__",
-#         "current_module",
-#         "current_class",
-#         "current_function",
-#     )
+class NumpyInsteadOfListForMatrices(ast.NodeVisitor):
+    """
+    NumpyInsteadOfListForMatrices will be used to analyse the usage of the list datastructure to represent
+    a matrix instead of using a numpy. Numpy offers a better matrix manipulation api. Faster, simpler, more readable.
+    """
 
-#     def __init__(self):
-#         self.lists__: Dict[str, Dict[str, Union[str, int, bool]]] = {}
-#         self.messages__: Dict[str, Union[str, int]] = {}
-#         self.current_module: str = ""
-#         self.current_class: str = ""
-#         self.current_function: str = ""
+    __slots__: ClassVar[Set[str]] = {
+        "structures__",
+        "message__",
+        "current_module",
+        "current_class",
+        "current_function",
+    }
 
-#     def visit_Module(self, node: ast.Module) -> Any:
-#         self.generic_visit(node)
-
-#     def visit_ClassDef(self, node: ast.ClassDef) -> Any:
-#         self.current_class: str = node.name
-#         self.generic_visit(node)
-
-#     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
-#         self.current_function: str = node.name
-#         self.generic_visit(node)
-
-#     def visit_For(self, node: ast.For) -> Any:
-#         self.generic_visit(node)
-
-#     def visit_While(self, node: ast.While) -> Any:
-#         self.generic_visit(node)
-
-#     def visit_Assign(self, node: ast.Assign) -> Any:
-#         for target in node.targets:
-#             if isinstance(target, ast.Name) and isinstance(node.value, ast.List):
-#                 list_name = f"{self.current_module}%{self.current_class}%{self.current_function}%{target.id}"
-#                 self.lists__[list_name]: Dict[str, bool | int | str] = {
-#                     "modified": False,
-#                     "homogeneous": False,
-#                     "line_nr": target.lineno,
-#                 }
-
-#             if isinstance(target, ast.Subscript):
-#                 for list_ in self.lists__.keys():
-#                     if target.value.id in list_:
-#                         self.lists__[list_]["modified"] = True
-
-#     def visit_Expr(self, node: ast.Expr) -> Any:
-#         for list_ in self.lists__.keys():
-#             if node.value.func.value.id in list_:
-#                 if node.value.func.attr == "append":
-#                     self.lists__[list_]["modified"] = True
-
-
-#     def print_messages(self):
-#         for key, value in self.lists__.items():
-#             # print(f"List: {key}")
-#             if not value["modified"]:
-#                 print(f"List: {key.split('%')[-1]} not modified, use a tuple instead!")
+    def __init__(self):
+        super().__init__(
+            message__="USE A NUMPY INSTEAD OF A LIST FOR MATRIX REPRESENATION AND MANIPULATION",
+            current_module="",
+            current_class="",
+            current_function="",
+        )
 
 
 class DictAnalyzer(ast.NodeVisitor):
@@ -263,13 +260,21 @@ class DictAnalyzer(ast.NodeVisitor):
     This class supports the following suggestions:
     """
 
-    __slots__: ClassVar[List[str]] = [
-        "dicts__",
-        "messages__",
-    ]
+    __slots__: ClassVar[Set[str]] = {
+        "structures__",
+        "message__",
+        "current_module",
+        "current_class",
+        "current_function",
+    }
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self):
+        super().__init__(
+            message__="",
+            current_module="",
+            current_class="",
+            current_function="",
+        )
 
 
 class SetAnalyzer(ast.NodeVisitor):
@@ -278,13 +283,21 @@ class SetAnalyzer(ast.NodeVisitor):
     This class supports the following suggestions:
     """
 
-    __slots__: ClassVar[List[str]] = [
-        "sets__",
-        "messages__",
-    ]
+    __slots__: ClassVar[Set[str]] = {
+        "structures__",
+        "message__",
+        "current_module",
+        "current_class",
+        "current_function",
+    }
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self):
+        super().__init__(
+            message__="",
+            current_module="",
+            current_class="",
+            current_function="",
+        )
 
 
 class TupleAnalyzer(ast.NodeVisitor):
@@ -293,153 +306,25 @@ class TupleAnalyzer(ast.NodeVisitor):
     This class supports the following suggestions:
     """
 
-    __slots__: ClassVar[List[str]] = [
-        "tuples__",
-        "messages__",
-    ]
+    __slots__: ClassVar[Set[str]] = {
+        "structures__",
+        "message__",
+        "current_module",
+        "current_class",
+        "current_function",
+    }
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self):
+        super().__init__(
+            message__="",
+            current_module="",
+            current_class="",
+            current_function="",
+        )
 
 
 tree = ast.parse(code)
 
 visitor = TupleInsteadOfListAnalyzer()
-
 visitor.visit(tree)
 visitor.print_messages()
-
-
-# class ListAnalyzer(ast.NodeVisitor):
-#     """
-#     ListAnalyzer is used to analyze the usage of list data structures in your code.
-
-#     This class provides suggestions for optimizing list usage.
-#     """
-
-#     __slots__: ClassVar[List[str]] = [
-#         "lists__",
-#         "messages__",
-#     ]
-
-#     def __init__(self) -> None:
-#         """
-#         Initialize the ListAnalyzer.
-
-#         Examples:
-#             self.lists__ example:
-#             {
-#                 func1_list1: {
-#                     "modified": True/False,
-#                     "homogeneous": True/False
-#                     "line_nr": (int)
-#                 }
-#             }
-
-#             self.messages__ example:
-#             {
-#                 message: "......"
-#                 line_nr: (int)
-#             }
-#         """
-#         self.lists__: Dict[str, Dict[str, Union[str, int, bool]]] = {}
-#         self.messages__: Dict[str, Union[str, int]] = {}
-
-#     def visit_FunctionDef(self, node) -> None:
-#         """
-#         Visit and analyze a function definition.
-
-#         Args:
-#             node (ast.FunctionDef): The function definition node.
-
-#         1. First get all list declarations in all function scopes.
-#         2. Check if the list has been modified (e.g., if elements are appended or changed).
-
-#         """
-#         for child in ast.iter_child_nodes(node):
-#             self.get_list_declarations(child, root_node=node)
-#         for child in ast.iter_child_nodes(node):
-#             if isinstance(child, (ast.For, ast.Expr, ast.Assign, ast.While)):
-#                 self.check_if_list_modified(child)
-
-#         for child in ast.iter_child_nodes(node):
-#             # print(child)
-#             print(ast.dump(child, indent=4))
-#             # for walker_ in ast.walk(child):
-#             # print(walker_)
-
-#             if isinstance(child, ast.For):
-#                 main_loop_variable_ = child.target.id
-#                 if getattr(child.iter, "func") and getattr(child.iter.func, "id"):
-#                     iterating_with_ = child.iter.func.id
-
-#                 if iterating_with_ == "range":
-#                     for body_child_ in child.body:
-#                         if isinstance(body_child_, ast.Expr):
-#                             if getattr(body_child_.value, "func"):
-#                                 for list_ in self.lists__.keys():
-#                                     if (
-#                                         body_child_.value.func.value.id in list_
-#                                         and body_child_.value.func.attr == "append"
-#                                     ):
-#                                         for append_args_ in body_child_.value.args:
-#                                             if isinstance(append_args_, ast.Name):
-#                                                 if (
-#                                                     append_args_.id
-#                                                     == main_loop_variable_
-#                                                 ):
-#                                                     self.lists__[list_][
-#                                                         "homogeneous"
-#                                                     ] = True
-#             if isinstance(child, ast.Expr):
-#                 pass
-
-#     def get_list_declarations(self, node, root_node):
-#         """
-#         Check for list declarations and record their details.
-
-#         Args:
-#             node (ast.AST): The current node being analyzed.
-#             root_node (ast.FunctionDef): The root function node.
-
-#         """
-#         if isinstance(node, ast.Assign):
-#             for target in node.targets:
-#                 if isinstance(target, ast.Name) and isinstance(node.value, ast.List):
-#                     list_name = f"{root_node.name}%{target.id}"
-#                     self.lists__[list_name]: Dict[str, Union[str, int, bool]] = {
-#                         "modified": False,
-#                         "homogeneous": False,
-#                         "line_nr": target.lineno,
-#                     }
-
-#     def check_if_list_modified(self, node) -> None:
-#         """
-#         Check if a list is modified (e.g., through append or subscript assignment).
-
-#         Args:
-#             node (ast.AST): The current node being analyzed.
-
-#         """
-
-#         if isinstance(node, ast.Expr):
-#             for list_ in self.lists__.keys():
-#                 if node.value.func.value.id in list_:
-#                     if node.value.func.attr == "append":
-#                         self.lists__[list_]["modified"] = True
-
-#         elif isinstance(node, ast.Assign):
-#             for target in node.targets:
-#                 if isinstance(target, ast.Subscript):
-#                     for list_ in self.lists__.keys():
-#                         if target.value.id in list_:
-#                             self.lists__[list_]["modified"] = True
-
-#     def print_messages(self):
-#         for key, value in self.lists__.items():
-#             if not value["modified"]:
-#                 print(f"List: {key.split('%')[-1]} not modified, use a tuple instead!")
-#             if value["homogeneous"]:
-#                 print(
-#                     f"List: {key.split('%')[-1]} is homogeneous. Use the array module if possible"
-#                 )
