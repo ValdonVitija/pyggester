@@ -2,7 +2,7 @@
 import abc
 import ast
 import pathlib
-from typing import Any, ClassVar, Dict, List, Set, Type, Union
+from typing import Any, ClassVar, Dict, List, Set, Type, Union, Tuple
 from pydantic import BaseModel, Field
 from typing_extensions import Annotated
 
@@ -253,24 +253,24 @@ class TupleInsteadOfListAnalyzer(Analyzer, ast.NodeVisitor):
             if not value["modified"]:
                 print(f"Line nr: {value['line_nr']} | {self.message__}")
 
-    def __iter__(self):
-        """
-        Since after each analyzer finishes its processing, we
-        need to access the structures__ attribute to fetch information
-        that has been stored during processing, we are converting
-        these analyzer objects into iterables, so that we iterate
-        over each structure per analzyer specifically.
-        This way we can iterate using the same way in all the
-        analzyers but the presented information might be different
-        since its structure could be different.
-        """
-        # return iter(self.structures__.items())
-        report__ = set()
-        for _, value in self.structures__.items():
-            if not value["modified"]:
-                report__.add(f"Line nr: {value['line_nr']} | {self.message__}")
+    # def __iter__(self):
+    #     """
+    #     Since after each analyzer finishes its processing, we
+    #     need to access the structures__ attribute to fetch information
+    #     that has been stored during processing, we are converting
+    #     these analyzer objects into iterables, so that we iterate
+    #     over each structure per analzyer specifically.
+    #     This way we can iterate using the same way in all the
+    #     analzyers but the presented information might be different
+    #     since its structure could be different.
+    #     """
+    #     # return iter(self.structures__.items())
+    #     report__ = set()
+    #     for _, value in self.structures__.items():
+    #         if not value["modified"]:
+    #             report__.add(f"Line nr: {value['line_nr']} | {self.message__}")
 
-        return iter(report__)
+    #     return iter(report__)
 
 
 class NumpyInsteadOfListForMatrices(Analyzer, ast.NodeVisitor):
@@ -371,69 +371,87 @@ class TupleAnalyzer(Analyzer, ast.NodeVisitor):
 #     return analyzers
 
 
-class AnalyzerCategory(BaseModel):
-    """
-    Represents the overall category for analyzers.
-    Categories:
-        - lists
-        - dicts
-        - sets
-        - tuples
-        - namedtuples
-        - queues
-        - arrays
-        - deques
-        - strings
-    """
+# class AnalyzerCategory(BaseModel):
+#     """
+#     Represents the overall category for analyzers.
+#     Categories:
+#         - lists
+#         - dicts
+#         - sets
+#         - tuples
+#         - namedtuples
+#         - queues
+#         - arrays
+#         - deques
+#         - strings
+#     """
 
-    analyzer_types: set[Type]
-
-
-class AnalyzersModel(BaseModel):
-    """
-    Represents each analyzer specifically
-    """
-
-    lists: Annotated[AnalyzerCategory, "Analyzers for Lists"] = {
-        "analyzer_types": {TupleInsteadOfListAnalyzer}
-    }
-    dicts: Annotated[AnalyzerCategory, "Analyzers for Dicts"] = {
-        "analyzer_types": {DictAnalyzer}
-    }
-    sets: Annotated[AnalyzerCategory, "Analyzers for Sets"] = {"analyzer_types": set()}
-    tuples: Annotated[AnalyzerCategory, "Analyzers for Tuples"] = {
-        "analyzer_types": set()
-    }
-    namedtuples: Annotated[AnalyzerCategory, "Analyzers for NamedTuples"] = {
-        "analyzer_types": set()
-    }
-    queues: Annotated[AnalyzerCategory, "Analyzers for Queues"] = {
-        "analyzer_types": set()
-    }
-    arrays: Annotated[AnalyzerCategory, "Analyzers for Arrays"] = {
-        "analyzer_types": set()
-    }
-    deques: Annotated[AnalyzerCategory, "Analyzers for Deques"] = {
-        "analyzer_types": set()
-    }
-    strings: Annotated[AnalyzerCategory, "Analyzers for Strings"] = {
-        "analyzer_types": set()
-    }
+#     analyzer_types: set[Type]
 
 
-def get_analyzers() -> AnalyzersModel:
-    """
-    Instead of having to import each analyzer on its own from the pyggester module,
-    we instead construct a structure that represents all different analyzer categories
-    """
-    analyzers = AnalyzersModel()
-    return analyzers
+# class AnalyzerCategory(BaseModel):
+#     """
+#     Represents the overall category for analyzers.
+#     Categories:
+#         - lists
+#         - dicts
+#         - sets
+#         - tuples
+#         - namedtuples
+#         - queues
+#         - arrays
+#         - deques
+#         - strings
+#     """
+
+#     analyzer_iterator_pair: Set[Tuple[Type, Type]]
 
 
-tree = ast.parse(code)
+# class AnalyzerMappingModel(BaseModel):
+#     """
+#     Represents each analyzer specifically
+#     """
 
-visitor = TupleInsteadOfListAnalyzer()
-visitor.visit(tree)
+#     lists: Annotated[AnalyzerCategory, "Analyzers/Message Iterators for Lists"] = {
+#         "analyzer_iterator_pair": {
+#             (TupleInsteadOfListAnalyzer, TupleInsteadOfListAnalyzerMessageIterator)
+#         }
+#     }
+# dicts: Annotated[AnalyzerCategory, "Analyzers for Dicts"] = {
+#     "analyzer_iterator_pair": set(frozenset())
+# }
+# sets: Annotated[AnalyzerCategory, "Analyzers for Sets"] = {"analyzer_types": set()}
+# tuples: Annotated[AnalyzerCategory, "Analyzers for Tuples"] = {
+#     "analyzer_iterator_pair": set(frozenset())
+# }
+# namedtuples: Annotated[AnalyzerCategory, "Analyzers for NamedTuples"] = {
+#     "analyzer_iterator_pair": set(frozenset())
+# }
+# queues: Annotated[AnalyzerCategory, "Analyzers for Queues"] = {
+#     "analyzer_iterator_pair": set(frozenset())
+# }
+# arrays: Annotated[AnalyzerCategory, "Analyzers for Arrays"] = {
+#     "analyzer_iterator_pair": set(frozenset())
+# }
+# deques: Annotated[AnalyzerCategory, "Analyzers for Deques"] = {
+#     "analyzer_iterator_pair": set(frozenset())
+# }
+# strings: Annotated[AnalyzerCategory, "Analyzers for Strings"] = {
+#     "analyzer_iterator_pair": set(frozenset())
+# }
+
+
+# def get_analyzers() -> AnalyzerMappingModel:
+#     """
+#     Instead of having to import each analyzer on its own from the pyggester module,
+#     we instead construct a structure that represents all different analyzer categories
+#     """
+#     analyzers = AnalyzerMappingModel()
+#     return analyzers
+
+
+# tree = ast.parse(code)
+
+# visitor = TupleInsteadOfListAnalyzer()
+# visitor.visit(tree)
 # visitor.print_messages()
-for report_ in visitor:
-    print(report_)
