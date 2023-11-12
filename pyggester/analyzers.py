@@ -103,7 +103,7 @@ class Analyzer(abc.ABC):
 
     # __slots__: ClassVar[Set[str]] = {
     #     "structures__",
-    #     "message__",
+    #     "message__",a
     #     "current_module",
     #     "current_class",
     #     "current_function",
@@ -252,6 +252,25 @@ class TupleInsteadOfListAnalyzer(Analyzer, ast.NodeVisitor):
         for _, value in self.structures__.items():
             if not value["modified"]:
                 print(f"Line nr: {value['line_nr']} | {self.message__}")
+
+    def __iter__(self):
+        """
+        Since after each analyzer finishes its processing, we
+        need to access the structures__ attribute to fetch information
+        that has been stored during processing, we are converting
+        these analyzer objects into iterables, so that we iterate
+        over each structure per analzyer specifically.
+        This way we can iterate using the same way in all the
+        analzyers but the presented information might be different
+        since its structure could be different.
+        """
+        # return iter(self.structures__.items())
+        report__ = set()
+        for _, value in self.structures__.items():
+            if not value["modified"]:
+                report__.add(f"Line nr: {value['line_nr']} | {self.message__}")
+
+        return iter(report__)
 
 
 class NumpyInsteadOfListForMatrices(Analyzer, ast.NodeVisitor):
@@ -415,4 +434,6 @@ tree = ast.parse(code)
 
 visitor = TupleInsteadOfListAnalyzer()
 visitor.visit(tree)
-visitor.print_messages()
+# visitor.print_messages()
+for report_ in visitor:
+    print(report_)
