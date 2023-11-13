@@ -22,7 +22,7 @@ app = typer.Typer(no_args_is_help=True)
 @app.command(no_args_is_help=True, name="static")
 def static_analysis(
     path_: Annotated[
-        str, typer.Option("--database", help="Database connection string")
+        str, typer.Option("--path", help="Database connection string")
     ] = None,
     LISTS_: Annotated[
         bool,
@@ -64,24 +64,13 @@ def static_analysis(
     ] = False,
 ):
     """
-    NOTE: This function represents the 'static' subcommand of pyggest
+    This function represents the 'static' subcommand of pyggest
 
     Perform static analysis using PyggestStatic.
 
     This command allows you to perform static analysis using PyggestStatic, a tool for
     analyzing Python code. You can specify various options to customize the analysis.
 
-    Args:
-        path_ (str): Database connection string.
-        LISTS_ (bool): Whether to include lists in the analysis.
-        DICTS_ (bool): Whether to include dicts in the analysis.
-        SETS_ (bool): Whether to include sets in the analysis.
-        TUPLES_ (bool): Whether to include tuples in the analysis.
-        all_ (bool): If True, use all available analysis capabilities.
-        HELP_ (bool): If True, get full documentation.
-
-    Returns:
-        None
     """
     command_handler = PyggestStatic(
         path_=path_,

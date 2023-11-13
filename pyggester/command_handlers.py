@@ -5,8 +5,10 @@ import typer
 from typing import Dict, List, ClassVar, Union
 from rich.console import Console
 from rich.markdown import Markdown
+from enum import Enum, auto
 from pyggester.text_formatters import custom_print
 from pyggester.helpers import get_help_files_dir
+from pyggester.pyggester import Pyggester
 
 __all__: List[str] = ["PyggestStatic", "PyggestDynamic"]
 
@@ -38,6 +40,7 @@ class CommandHandler(abc.ABC):
         Returns:
             Union[None, Exit]: None if the function doesn't return anything, or a Typer Exit object.
         """
+        # pylint: disable=E1101
         if self.HELP_:
             console = Console()
             with open(os.path.join(README_FILES_DIR, self.README)) as readme:
@@ -97,7 +100,46 @@ class PyggestStatic(CommandHandler):
         super().__init__()
 
     def process(self) -> None:
-        pass
+        try:
+            pyggester = Pyggester(path_=self.path_)
+            if self.HELP_:
+                self.handle_HELP_()
+            self.handle_all_standalone(pyggester)
+            self.handle_chosen_categories(pyggester)
+            self.handle_no_valid_combination()
+
+        except Exception as ex:
+            if isinstance(ex, typer.Exit):
+                raise ex
+            print(ex)
+
+    def handle_chosen_categories(self, pyggester):
+        if any([self.LISTS_, self.DICTS_, self.SETS_, self.TUPLES_]) and not self.all_:
+            pyggester.run(self.categories_to_analyze())
+            raise typer.Exit()
+
+    def handle_all_standalone(self, pyggester):
+        if self.all_ and not any(
+            [[self.LISTS_, self.DICTS_, self.SETS_, self.TUPLES_]]
+        ):
+            pyggester.run(self.categories_to_analyze())
+            raise typer.Exit()
+
+    def categories_to_analyze(self):
+        categories_ = set()
+        if self.all_:
+            return ("lists", "tuples", "sets", "dicts")
+
+        if self.LISTS_:
+            categories_.add("lists")
+        if self.TUPLES_:
+            categories_.add("tuples")
+        if self.SETS_:
+            categories_.add("sets")
+        if self.DICTS_:
+            categories_.add("dicts")
+
+        return categories_
 
 
 class PyggestDynamic(CommandHandler):
