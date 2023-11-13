@@ -48,8 +48,8 @@ pyggester - (python + suggester) functions as both a static and dynamic analyzer
 
     `Execution command`
 
-    > [!WARNING]
-    > The 'dynamic' subcommand is currently not supported
+    > [!NOTE]
+    > The 'dynamic' subcommand is currently not implemented
 
     ``` bash
     pyggest dynamic
