@@ -85,7 +85,6 @@ class Analyzer(abc.ABC):
 
     def __init__(self, pathconfig: PathConfig):
         self.structures__: Dict[str, Dict[str, Union[str, int, bool]]] = {}
-        # self.message__: str = message__
         self.pathconfig: PathConfig = pathconfig
 
 
@@ -213,7 +212,7 @@ class TupleInsteadOfListAnalyzer(Analyzer, ast.NodeVisitor):
                 if node.value.func.attr == "append":
                     self.structures__[list_]["modified"] = True
 
-    
+
 class NumpyInsteadOfListForMatrices(Analyzer, ast.NodeVisitor):
     """
     NumpyInsteadOfListForMatrices will be used to analyse the usage of the list datastructure to represent
