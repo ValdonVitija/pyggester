@@ -9,6 +9,7 @@
 
 <h1 align="center">Pyggester - static/dynamic python analysis</h1>
 
+
 # About
 
 pyggester - (python + suggester) functions as both a static and dynamic analyzer. Its primary purpose lies in offering suggestions to enhance the efficiency of Python code by addressing suboptimal usage of data structures.
@@ -29,9 +30,12 @@ pyggester - (python + suggester) functions as both a static and dynamic analyzer
     ``` bash
     pyggest dynamic
     ```
-    <blockquote style=" color: #95E3F4; padding: 10px; border-left: 5px solid #ff0000;">
-      <strong>Note:</strong> pyggest static/dynamic -- HELP offers built-in documentation for detailed usage
-    </blockquote> 
+
+    > [!IMPORTANT]
+    >  ```bash 
+    >  pyggest static/dynamic -- HELP offers built-in documentation for detailed usage
+    >  ```
+
 
 # Available Analyzers
 
@@ -39,11 +43,11 @@ The core functionality of pyggester revolves around analyzers, particularly node
 
 Currently, the supported analyzer is:
 
-  - `TupleInsteadOfListAnalyzer`
+  - TupleInsteadOfListAnalyzer
 
+# Installation
 
-
-### `Using Pip`
+### Using Pip
 You can easily install the Python library using pip. Open your terminal and run the following command:
 ```bash
 pip install pyggester
@@ -51,7 +55,7 @@ pip install pyggester
 ```
 
 
-### `Cloning the GitHub Repository`
+### Cloning the GitHub Repository
 
 1. **Clone the Repository:** Open your terminal and run the following command to clone the GitHub repository to your local machine:
 
@@ -110,3 +114,4 @@ pip install pyggester
 # Abstract Execution Flow
 
 ![Alt text](pyggester_abstract_execution_flow.png)
+
