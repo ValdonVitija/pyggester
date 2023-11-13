@@ -23,10 +23,34 @@ pyggester - (python + suggester) functions as both a static and dynamic analyzer
     ``` bash
     pyggest static
     ```
+    `output`
+    ```bash
+        Usage: pyggest static [OPTIONS]
+
+    This function represents the 'static' subcommand of pyggest
+    Perform static analysis using PyggestStatic.
+    This command allows you to perform static analysis using PyggestStatic, a tool for analyzing Python code.
+    You can specify various options to customize the analysis.
+
+    ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────╮
+    │ --path          TEXT  Database connection string [default: None]                                           │
+    │ --lists               Use this option to include lists in analysis                                         │
+    │ --dicts               Use this option to include dicts in analysis                                         │
+    │ --sets                Use this option to include sets in analysis                                          │
+    │ --tuples              Use this option to include tuples in analysis                                        │
+    │ --all                 If you want pyggester to use all its capabilites use this option                     │
+    │ --HELP                Get full documentation                                                               │
+    │ --help                Show this message and exit.                                                          │
+    ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+    ```
 
   - Dynamic Analysis: While currently not supported as a functional feature, it exists as a designated subcommand, hinting at future capabilities for dynamic code examination.
 
     `Execution command`
+
+    > [!WARNING]
+    > The 'dynamic' subcommand is currently not supported
+
     ``` bash
     pyggest dynamic
     ```
@@ -68,9 +92,8 @@ pip install pyggester
     cd pyggester
     ```
 3. **Install pyggester as a pacakge locally:** 
-    <blockquote style=" color: #ff0000; padding: 10px; border-left: 5px solid #ff0000;">
-      <strong>Note:</strong> Consider doing this within a virtual environment (venv) if possible.
-    </blockquote>
+    > [!IMPORTANT]
+    > Consider doing this within a virtual environment (venv) if possible.
 
     ```bash
     pip install .
@@ -113,5 +136,37 @@ pip install pyggester
 ```
 # Abstract Execution Flow
 
+The following flow diagram illustrates key components of Pyggester and provides a comprehensive overview of the execution sequence.
+
 ![Alt text](pyggester_abstract_execution_flow.png)
+
+
+# Contribution
+
+To contribute to this project, please refer to the comprehensive  [contribution guide](contributing.md)  for detailed instructions and best practices.
+
+# License
+
+MIT License
+
+Copyright (c) 2023 ValdonVitijaa
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 
