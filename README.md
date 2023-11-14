@@ -44,7 +44,7 @@ pyggester - (python + suggester) functions as both a static and dynamic analyzer
     ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
     ```
 
-  - Dynamic Analysis: While currently not supported as a functional feature, it exists as a designated subcommand, hinting at future capabilities for dynamic code examination.
+  - Dynamic Analysis: This feature *will* comprehensively examine your code in the process of execution, providing potential suggestions for further code optimizations(mainly related to data structures)
 
     `Execution command`
 
