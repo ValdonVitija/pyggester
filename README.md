@@ -33,7 +33,7 @@ pyggester - (python + suggester) functions as both a static and dynamic analyzer
     You can specify various options to customize the analysis.
 
     ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────╮
-    │ --path          TEXT  Database connection string [default: None]                                           │
+    │ --path          TEXT  path to python file/files                                                            │
     │ --lists               Use this option to include lists in analysis                                         │
     │ --dicts               Use this option to include dicts in analysis                                         │
     │ --sets                Use this option to include sets in analysis                                          │
@@ -57,7 +57,7 @@ pyggester - (python + suggester) functions as both a static and dynamic analyzer
 
     > [!IMPORTANT]
     >  ```bash 
-    >  pyggest static/dynamic -- HELP offers built-in documentation for detailed usage
+    >  pyggest static/dynamic --HELP #offers built-in documentation for detailed usage
     >  ```
 
 
@@ -71,33 +71,33 @@ Currently, the supported analyzer is:
 
 # Installation
 
-### Using Pip
-You can easily install the Python library using pip. Open your terminal and run the following command:
-```bash
-pip install pyggester
+  ### Using Pip
+  You can easily install the Python library using pip. Open your terminal and run the following command:
+  ```bash
+  pip install pyggester
 
-```
+  ```
 
 
-### Cloning the GitHub Repository
+  ### Cloning the GitHub Repository
 
-1. **Clone the Repository:** Open your terminal and run the following command to clone the GitHub repository to your local machine:
+  1. **Clone the Repository:** Open your terminal and run the following command to clone the GitHub repository to your local machine:
 
-    ```bash
-    git clone git@github.com:ValdonVitija/pyggester.git
-    ```
-2. **Navigate to the Repository:** Change your working directory to the cloned repository:
+      ```bash
+      git clone git@github.com:ValdonVitija/pyggester.git
+      ```
+  2. **Navigate to the Repository:** Change your working directory to the cloned repository:
 
-    ```bash
-    cd pyggester
-    ```
-3. **Install pyggester as a pacakge locally:** 
-    > [!IMPORTANT]
-    > Consider doing this within a virtual environment (venv) if possible.
+      ```bash
+      cd pyggester
+      ```
+  3. **Install pyggester as a pacakge locally:** 
+      > [!IMPORTANT]
+      > Consider doing this within a virtual environment (venv) if possible.
 
-    ```bash
-    pip install .
-    ```
+      ```bash
+      pip install .
+      ```
 
 
 
