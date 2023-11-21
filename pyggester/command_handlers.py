@@ -2,7 +2,7 @@ import abc
 import os
 import pathlib
 import typer
-from typing import Dict, List, ClassVar, Union
+from typing import Dict, List, ClassVar, Union, Tuple
 from rich.console import Console
 from rich.markdown import Markdown
 from enum import Enum, auto
@@ -28,7 +28,7 @@ class CommandHandler(abc.ABC):
     def process(self) -> None:
         ...
 
-    def handle_HELP_(self) -> Union[None, typer.Exit]:
+    def handle_help_(self) -> Union[None, typer.Exit]:
         """
         Handle the --HELP option by displaying the README file.
 
@@ -69,41 +69,41 @@ class PyggestStatic(CommandHandler):
         pyggest static
     """
 
-    __slots__: ClassVar[List[str]] = [
+    __slots__: ClassVar[Tuple[str]] = (
         "path_",
-        "LISTS_",
-        "DICTS_",
-        "SETS_",
-        "TUPLES_",
+        "lists_",
+        "dicts_",
+        "sets_",
+        "tuples_",
         "all_",
-        "HELP_",
-    ]
+        "help_",
+    )
 
     def __init__(
         self,
         path_: pathlib.Path,
-        LISTS_: bool,
-        DICTS_: bool,
-        SETS_: bool,
-        TUPLES_: bool,
+        lists_: bool,
+        dicts_: bool,
+        sets_: bool,
+        tuples_: bool,
         all_: bool,
-        HELP_: bool,
+        help_: bool,
     ) -> None:
         self.path_ = pathlib.Path(path_)
-        self.LISTS_: bool = LISTS_
-        self.DICTS_: bool = DICTS_
-        self.SETS_: bool = SETS_
-        self.TUPLES_: bool = TUPLES_
+        self.lists_: bool = lists_
+        self.dicts_: bool = dicts_
+        self.sets_: bool = sets_
+        self.tuples_: bool = tuples_
         self.all_: bool = all_
-        self.HELP_: bool = HELP_
+        self.help_: bool = help_
         self.README = pathlib.Path("static_helper.md")
         super().__init__()
 
     def process(self) -> None:
         try:
             pyggester = Pyggester(path_=self.path_)
-            if self.HELP_:
-                self.handle_HELP_()
+            if self.help_:
+                self.handle_help_()
             self.handle_all_standalone(pyggester)
             self.handle_chosen_categories(pyggester)
             self.handle_no_valid_combination()
@@ -114,13 +114,13 @@ class PyggestStatic(CommandHandler):
             print(ex)
 
     def handle_chosen_categories(self, pyggester):
-        if any([self.LISTS_, self.DICTS_, self.SETS_, self.TUPLES_]) and not self.all_:
+        if any([self.lists_, self.dicts_, self.sets_, self.tuples_]) and not self.all_:
             pyggester.run(self.categories_to_analyze())
             raise typer.Exit()
 
     def handle_all_standalone(self, pyggester):
         if self.all_ and not any(
-            [[self.LISTS_, self.DICTS_, self.SETS_, self.TUPLES_]]
+            [[self.lists_, self.dicts_, self.sets_, self.tuples_]]
         ):
             pyggester.run(self.categories_to_analyze())
             raise typer.Exit()
@@ -130,13 +130,13 @@ class PyggestStatic(CommandHandler):
         if self.all_:
             return ("lists", "tuples", "sets", "dicts")
 
-        if self.LISTS_:
+        if self.lists_:
             categories_.add("lists")
-        if self.TUPLES_:
+        if self.tuples_:
             categories_.add("tuples")
-        if self.SETS_:
+        if self.sets_:
             categories_.add("sets")
-        if self.DICTS_:
+        if self.dicts_:
             categories_.add("dicts")
 
         return categories_
@@ -148,7 +148,7 @@ class PyggestDynamic(CommandHandler):
         pyggest dynamic
     """
 
-    __slots__: ClassVar[List[str]] = []
+    __slots__: ClassVar[tuple[str]] = ()
 
     def __init__(self) -> None:
         self.README = pathlib.Path("dynamic_helper.md")

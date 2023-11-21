@@ -1,83 +1,83 @@
-# from message_iterators import TupleInsteadOfListAnalyzerMessageIterator, MessageIterator
-# from analyzers import TupleInsteadOfListAnalyzer, Analyzer
+# # from message_iterators import TupleInsteadOfListAnalyzerMessageIterator, MessageIterator
+# # from analyzers import TupleInsteadOfListAnalyzer, Analyzer
 
-from pyggester.message_iterators import (
-    TupleInsteadOfListAnalyzerMessageIterator,
-    MessageIterator,
-)
-from pyggester.analyzers import TupleInsteadOfListAnalyzer, Analyzer
-
-
-import ast
-from typing import Any, ClassVar, Dict, List, Set, Type, Union, Tuple
-from pydantic import BaseModel
-from typing_extensions import Annotated
+# from pyggester.message_iterators import (
+#     TupleInsteadOfListAnalyzerMessageIterator,
+#     MessageIterator,
+# )
+# from pyggester.analyzers import TupleInsteadOfListAnalyzer, Analyzer
 
 
-class AnalyzerModel(BaseModel):
-    """
-    Pydantic model representing an analyzer.
-
-    Attributes:
-        Analyzer (Type[Analyzer]): Type of the analyzer.
-        MessageIterator (Type[MessageIterator]): Type of the message iterator.
-    """
-
-    Analyzer: Type[Analyzer]
-    MessageIterator: Type[MessageIterator]
+# import ast
+# from typing import Any, ClassVar, Dict, List, Set, Type, Union, Tuple
+# from pydantic import BaseModel
+# from typing_extensions import Annotated
 
 
-class AnalyzerCategories(BaseModel):
-    """
-    Represents the overall category for analyzers.
-    Categories:
-        - lists
-        - dicts
-        - sets
-        - tuples
-        - namedtuples
-        - queues
-        - arrays
-        - deques
-        - strings
-    """
+# class AnalyzerModel(BaseModel):
+#     """
+#     Pydantic model representing an analyzer.
 
-    lists: Tuple[AnalyzerModel]
-    # dicts: Tuple[AnalyzerModel]
-    # sets: Tuple[AnalyzerModel]
-    # tuples: Tuple[AnalyzerModel]
-    # namedtuples: Tuple[AnalyzerModel]
-    # queues: Tuple[AnalyzerModel]
-    # arrays: Tuple[AnalyzerModel]
-    # deques: Tuple[AnalyzerModel]
-    # strings: Tuple[AnalyzerModel]
+#     Attributes:
+#         Analyzer (Type[Analyzer]): Type of the analyzer.
+#         MessageIterator (Type[MessageIterator]): Type of the message iterator.
+#     """
+
+#     Analyzer: Type[Analyzer]
+#     MessageIterator: Type[MessageIterator]
 
 
-MODEL = {
-    "lists": (
-        AnalyzerModel(
-            Analyzer=TupleInsteadOfListAnalyzer,
-            MessageIterator=TupleInsteadOfListAnalyzerMessageIterator,
-        ),
-    ),
-    # "dicts": (AnalyzerModel()),
-    # "sets": (AnalyzerModel()),
-    # "tuples": (AnalyzerModel()),
-    # "namedtuples": (AnalyzerModel()),
-    # "queues": (AnalyzerModel()),
-    # "arrays": (AnalyzerModel()),
-    # "deques": (AnalyzerModel()),
-    # "strings": (AnalyzerModel()),
-}
+# class AnalyzerCategories(BaseModel):
+#     """
+#     Represents the overall category for analyzers.
+#     Categories:
+#         - lists
+#         - dicts
+#         - sets
+#         - tuples
+#         - namedtuples
+#         - queues
+#         - arrays
+#         - deques
+#         - strings
+#     """
+
+#     lists: Tuple[AnalyzerModel]
+#     # dicts: Tuple[AnalyzerModel]
+#     # sets: Tuple[AnalyzerModel]
+#     # tuples: Tuple[AnalyzerModel]
+#     # namedtuples: Tuple[AnalyzerModel]
+#     # queues: Tuple[AnalyzerModel]
+#     # arrays: Tuple[AnalyzerModel]
+#     # deques: Tuple[AnalyzerModel]
+#     # strings: Tuple[AnalyzerModel]
 
 
-def get_analyzer_categories() -> AnalyzerCategories:
-    """
-    Instead of having to import each analyzer on its own from the pyggester module,
-    we instead construct a structure that represents all different analyzer categories
-    """
-    analyzers = AnalyzerCategories(**MODEL)
-    return analyzers
+# MODEL = {
+#     "lists": (
+#         AnalyzerModel(
+#             Analyzer=TupleInsteadOfListAnalyzer,
+#             MessageIterator=TupleInsteadOfListAnalyzerMessageIterator,
+#         ),
+#     ),
+#     # "dicts": (AnalyzerModel()),
+#     # "sets": (AnalyzerModel()),
+#     # "tuples": (AnalyzerModel()),
+#     # "namedtuples": (AnalyzerModel()),
+#     # "queues": (AnalyzerModel()),
+#     # "arrays": (AnalyzerModel()),
+#     # "deques": (AnalyzerModel()),
+#     # "strings": (AnalyzerModel()),
+# }
+
+
+# def get_analyzer_categories() -> AnalyzerCategories:
+#     """
+#     Instead of having to import each analyzer on its own from the pyggester module,
+#     we instead construct a structure that represents all different analyzer categories
+#     """
+#     analyzers = AnalyzerCategories(**MODEL)
+#     return analyzers
 
 
 # code = """

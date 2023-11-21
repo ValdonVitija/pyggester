@@ -16,7 +16,36 @@ pyggester - (python + suggester) functions as both a static and dynamic analyzer
 
 # Features
 
-  The pyggester CLI presents two distinct features:
+  Pyggester offers a pretty decent cli interface for its functionalities. The cli is built on top of [typer](https://github.com/tiangolo/typer)
+  
+  `Execution command`:
+  ```bash
+  pyggest
+  ```
+  `output`:
+  ```
+                                              _____
+_____________  ________ _______ ______________  /_____________
+___  __ \_  / / /_  __ `/_  __ `/  _ \_  ___/  __/  _ \_  ___/
+__  /_/ /  /_/ /_  /_/ /_  /_/ //  __/(__  )/ /_ /  __/  /
+_  .___/_\__, / _\__, / _\__, / \___//____/ \__/ \___//_/
+/_/     /____/  /____/  /____/
+
+
+ Usage: pyggest [OPTIONS] COMMAND [ARGS]...
+
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current shell.                                                                      │
+│ --show-completion             Show completion for the current shell, to copy it or customize the installation.                               │
+│ --help                        Show this message and exit.                                                                                    │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ dynamic               Perform dynamic analysis using PyggestDynamic.                                                                         │
+│ static                Perform static analysis using PyggestStatic.                                                                           │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  ```
+
+   The pyggester CLI presents two distinct features:
   - Static Analysis: This feature comprehensively examines your code without executing it, providing insightful insights into its structure and potential improvements.
     
     `Execution command`
@@ -49,7 +78,7 @@ pyggester - (python + suggester) functions as both a static and dynamic analyzer
     `Execution command`
 
     > [!NOTE]
-    > The 'dynamic' subcommand is currently not implemented
+    > The 'dynamic' subcommand exists, but has no functionalities implemented.
 
     ``` bash
     pyggest dynamic

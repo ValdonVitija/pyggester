@@ -24,28 +24,28 @@ def static_analysis(
     path_: Annotated[
         str, typer.Option("--path", help="Database connection string")
     ] = None,
-    LISTS_: Annotated[
+    lists_: Annotated[
         bool,
         typer.Option(
             "--lists",
             help="Use this option to include lists in analysis",
         ),
     ] = False,
-    DICTS_: Annotated[
+    dicts_: Annotated[
         bool,
         typer.Option(
             "--dicts",
             help="Use this option to include dicts in analysis",
         ),
     ] = False,
-    SETS_: Annotated[
+    sets_: Annotated[
         bool,
         typer.Option(
             "--sets",
             help="Use this option to include sets in analysis",
         ),
     ] = False,
-    TUPLES_: Annotated[
+    tuples_: Annotated[
         bool,
         typer.Option(
             "--tuples",
@@ -56,16 +56,14 @@ def static_analysis(
         bool,
         typer.Option(
             "--all",
-            help="If you want pyggester to use all its capabilites use this option",
+            help="If you want pyggester to use all its capabilities use this option",
         ),
     ] = False,
-    HELP_: Annotated[
-        bool, typer.Option("--HELP", help="Get full documentation")
+    help_: Annotated[
+        bool, typer.Option("--help", help="Get full documentation")
     ] = False,
 ):
     """
-    This function represents the 'static' subcommand of pyggest
-
     Perform static analysis using PyggestStatic.
 
     This command allows you to perform static analysis using PyggestStatic, a tool for
@@ -74,12 +72,12 @@ def static_analysis(
     """
     command_handler = PyggestStatic(
         path_=path_,
-        LISTS_=LISTS_,
-        DICTS_=DICTS_,
-        SETS_=SETS_,
-        TUPLES_=TUPLES_,
+        lists_=lists_,
+        dicts_=dicts_,
+        sets_=sets_,
+        tuples_=tuples_,
         all_=all_,
-        HELP_=HELP_,
+        help_=help_,
     )
     command_handler.process()
 
