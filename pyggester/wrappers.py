@@ -5,6 +5,25 @@ from astor import to_source
 from typing import Any, ClassVar, Tuple, Union, Set
 import pathlib
 from helpers import source_code_to_str
+from module_importer import add_imports
+
+
+# ----------------------------------------------------------
+
+# The following wrappers are used for built-in standard python data structures.
+# List of standard python data structures:
+
+# list -> [] or list()
+# dict -> {} or dict()
+# set -> {} or set()
+# tuple -> () or tuple()
+
+# These datastructures can be directly derived to create a single wrappers that
+# can wrap the original datastructure declarations without changing their core
+# behaviour
+
+
+# ----------------------------------------------------------
 
 
 class ObservableListWrapper(ast.NodeTransformer):
@@ -91,53 +110,81 @@ class ObservableSetWrapper(ast.NodeTransformer):
         )
 
 
+# ----------------------------------------------------------
+
+# The following wrappers are part of the collections built-in python module.
+# List of all container datatypes:
+
+# ChainMap
+# Counter
+# OrderedDict
+# UserDict
+# UserList
+# UserString
+# defaultdict
+# deque
+# namedtuple
+
+# These collections cannot be directly derived to create a single wrapper that
+# can wrap the original datastructure declarations without changing its core
+# behaviour
+
+# ----------------------------------------------------------
+
+
 class ObservableNamedTupleWrapper(ast.NodeTransformer):
     """AST transformer to wrap namedtuples with ObservableNamedTuple."""
 
-    def __init__(self) -> None:
-        self.namedtuple_instances = set()
+    class NamedTupleVisitor(ast.NodeVisitor):
+        """
+        NamedTuple visitor to be used internally only by the outer-class.
+        The purpose of this class is specifically to get all namedtuple instances
+        in the current module being analyzed
+        """
 
-    def visit_Module(self, node: Module) -> Any:
-        print(ast.dump(node, indent=4))
+        def __init__(self) -> None:
+            self.namedtuple_instances = set()
 
-    def visit_Assign(self, node: Assign) -> Any:
-        # print(ast.dump(node, indent=4))
-        # for target in node.targets:
+        def visit_Assign(self, node: ast.Assign) -> Any:
+            """
+            Visit each Assign node, because namedtuple declaration are all
+            Assign nodes in the python's ast.
+            """
+            if getattr(node, "value") and isinstance(node.value, ast.Call):
+                if getattr(node.value, "func"):
+                    if isinstance(node.value.func, ast.Name):
+                        if node.value.func.id == "namedtuple":
+                            for target in node.targets:
+                                if isinstance(target, ast.Name):
+                                    self.namedtuple_instances.add(target.id)
+
+    def __init__(self, tree) -> None:
+        """
+        Immediatly initialize the tuple visitor and collect all namedtuple constructor declarations.
+        """
+        self.namedtuple_visitor = self.NamedTupleVisitor()
+        self.namedtuple_visitor.visit(tree)
+        self.modified_nodes = []
+
+    def visit_Assign(self, node: ast.Assign) -> Any:
+        """
+        Now visit each Assign node and check if that node is a namedtuple instance of a collected
+        type by NamedTupleVisitor. If thats the case, wrap each instance into an ObservableNamedTupleWrapper,
+        so that we can analyze its internal structure for potential suggestions.
+        """
         if getattr(node, "value") and isinstance(node.value, ast.Call):
             if getattr(node.value, "func"):
                 if isinstance(node.value.func, ast.Name):
-                    if node.value.func.id == "namedtuple":
+                    if (
+                        node.value.func.id
+                        in self.namedtuple_visitor.namedtuple_instances
+                    ):
                         for target in node.targets:
                             if isinstance(target, ast.Name):
-                                print("here")
-                                self.namedtuple_instances.add(target.id)
-
-        print(self.namedtuple_instances)
-        # if isinstance(target, ast.Name):
-        # target.id
-    def visit_Expr(self, node: Expr) -> Any:
-
-    # def visit_Call(self, node: ast.Call) -> Union[ast.Call, ast.AST]:
-    #     """
-    #     Transform a Call node to an ObservableNamedTuple node.
-
-    #     Args:
-    #         node (ast.Call): The original Call node.
-
-    #     Returns:
-    #         Union[ast.Call, ast.AST]: The transformed node.
-    #     """
-    #     if (
-    #         isinstance(node.func, ast.Name)
-    #         and node.func.id == self.typename
-    #         and isinstance(node.args[0], ast.Tuple)
-    #     ):
-    #         return ast.Call(
-    #             func=ast.Name(id="ObservableNamedTuple", ctx=ast.Load()),
-    #             args=[node],
-    #             keywords=[],
-    #         )
-    #     return node
+                                wrapper_code = f"{target.id}_wrapper = ObservableNamedTupleWrapper(*{target.id})"
+                                wrapper_node = ast.parse(wrapper_code).body[0]
+                                return [node, wrapper_node]
+        return node
 
 
 class WrapperCollector(ast.NodeVisitor):
@@ -148,11 +195,6 @@ class WrapperCollector(ast.NodeVisitor):
     __slots__: Tuple[str] = ("observables",)
 
     def __init__(self) -> None:
-        """
-        Initialize the WrapperCollector.
-
-        The observables set is used to store the names of wrapper classes.
-        """
         self.observables: Set[str] = set()
 
     def visit_ClassDef(self, node: ast.ClassDef) -> Any:
@@ -182,31 +224,45 @@ def get_wrappers_as_strings() -> Set[str]:
     return wrapper_visitor.observables
 
 
-def add_observable_wrappers(source_code):
-    tree = ast.parse(source_code)
+WRAPPERS = {
+    "standard_containers": {
+        "list": ObservableListWrapper,
+        "dict": ObservableDictWrapper,
+        "set": ObservableSetWrapper,
+        "tuple": ObservableTupleWrapper,
+    },
+    "collector_containers": {"namedtuple": ObservableNamedTupleWrapper},
+}
 
-    # list_transformer = ObservableListWrapper()
-    # dict_transformer = ObservableDictWrapper()
-    namedtuple_transformer = ObservableNamedTupleWrapper()
 
-    # for transformer in (list_transformer, dict_transformer):
-    #     tree = transformer.visit(tree)
-    tree = namedtuple_transformer.visit(tree)
-    # return to_source(tree)
+def apply_observable_modifications(source_code):
+    tree = add_imports(source_code, get_wrappers_as_strings())
+
+    # tree = ast.parse(source_code)
+    for _, wrapper in WRAPPERS["standard_containers"].items():
+        tree = wrapper().visit(tree)
+    for _, wrapper in WRAPPERS["collector_containers"].items():
+        tree = wrapper(tree).visit(tree)
+
     return ast.unparse(tree)
 
 
 # Example usage
 original_code = """
+import math 
+import nothing 
 my_list = [1, 2, 3]
 my_dict = {'a': 1, 'b': 2}
 Person = namedtuple('Person'['name', 'age'])
-Person(name="sdsd", age=22)
+p1 = Person(name="sdsd", age=22)
 def func1():
     mapper: {a:1, b:2}
+
+Car = namedtuple('Car', ['brand','model'])
+car_1 = Car(brand=tesla,model=x)
 """
 
-wrapped_code = add_observable_wrappers(original_code)
+wrapped_code = apply_observable_modifications(original_code)
 
 # Output the transformed code
 print(wrapped_code)
