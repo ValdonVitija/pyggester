@@ -120,12 +120,10 @@ def add_imports(source_code: str, wrappers) -> str:
     Adds Wrapper imports to each module being transformed. This is meant to be ran
     for each module/file in the process of transformation.
     """
-    # wrappers: Set[str] = get_wrappers_as_strings()
     tree = ast.parse(source_code)
-    transformer = ImportModuleTransformer(tree, "pyggester.wrappers", wrappers)
+    transformer = ImportModuleTransformer(tree, "pyggester.observables", wrappers)
     tree = transformer.visit(tree)
 
-    # return ast.unparse(tree)
     return tree
 
 

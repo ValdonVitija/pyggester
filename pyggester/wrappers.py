@@ -6,6 +6,7 @@ from typing import Any, ClassVar, Tuple, Union, Set
 import pathlib
 from helpers import source_code_to_str
 from module_importer import add_imports
+from observable_runner import apply_observable_collector_transformations
 
 
 # ----------------------------------------------------------
@@ -181,7 +182,7 @@ class ObservableNamedTupleWrapper(ast.NodeTransformer):
                     ):
                         for target in node.targets:
                             if isinstance(target, ast.Name):
-                                wrapper_code = f"{target.id}_wrapper = ObservableNamedTupleWrapper(*{target.id})"
+                                wrapper_code = f"{target.id}_wrapper = ObservableNamedTuple(*{target.id})"
                                 wrapper_node = ast.parse(wrapper_code).body[0]
                                 return [node, wrapper_node]
         return node
@@ -209,7 +210,7 @@ class WrapperCollector(ast.NodeVisitor):
             node (ast.ClassDef): The ClassDef node to visit.
         """
         if node.name != self.__class__.__name__:
-            self.observables.add(node.name)
+            self.observables.add(node.name.split("Wrapper")[0])
 
 
 def get_wrappers_as_strings() -> Set[str]:
@@ -236,9 +237,17 @@ WRAPPERS = {
 
 
 def apply_observable_modifications(source_code):
+    """
+    Function that offers api wrapper functionality.
+    This function takes the source code as a string and soley based on that does automatic
+    code transformations.
+    First of all it adds imports at the top of the module for ObservableWrappers
+    """
+    # adds imports to the module being analyzed.
     tree = add_imports(source_code, get_wrappers_as_strings())
-
-    # tree = ast.parse(source_code)
+    # adds the needed code to run observables so that we actually get the collected suggestions messages
+    tree = apply_observable_collector_transformations(tree)
+    # adds wrappers to each container(standard/collector containers)
     for _, wrapper in WRAPPERS["standard_containers"].items():
         tree = wrapper().visit(tree)
     for _, wrapper in WRAPPERS["collector_containers"].items():
@@ -247,10 +256,10 @@ def apply_observable_modifications(source_code):
     return ast.unparse(tree)
 
 
-# Example usage
 original_code = """
 import math 
 import nothing 
+
 my_list = [1, 2, 3]
 my_dict = {'a': 1, 'b': 2}
 Person = namedtuple('Person'['name', 'age'])
