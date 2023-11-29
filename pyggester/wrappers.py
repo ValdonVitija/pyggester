@@ -6,7 +6,8 @@ from typing import Any, ClassVar, Tuple, Union, Set
 import pathlib
 from helpers import source_code_to_str
 from module_importer import add_imports
-from observable_runner import apply_observable_collector_transformations
+
+# from observable_runner import apply_observable_collector_transformations
 
 
 # ----------------------------------------------------------
@@ -236,24 +237,19 @@ WRAPPERS = {
 }
 
 
-def apply_observable_modifications(source_code):
+def apply_wrappers(tree: ast.AST) -> ast.AST:
     """
     Function that offers api wrapper functionality.
     This function takes the source code as a string and soley based on that does automatic
     code transformations.
     First of all it adds imports at the top of the module for ObservableWrappers
     """
-    # adds imports to the module being analyzed.
-    tree = add_imports(source_code, get_wrappers_as_strings())
-    # adds the needed code to run observables so that we actually get the collected suggestions messages
-    tree = apply_observable_collector_transformations(tree)
-    # adds wrappers to each container(standard/collector containers)
     for _, wrapper in WRAPPERS["standard_containers"].items():
         tree = wrapper().visit(tree)
     for _, wrapper in WRAPPERS["collector_containers"].items():
         tree = wrapper(tree).visit(tree)
 
-    return ast.unparse(tree)
+    return tree
 
 
 original_code = """
@@ -270,8 +266,3 @@ def func1():
 Car = namedtuple('Car', ['brand','model'])
 car_1 = Car(brand=tesla,model=x)
 """
-
-wrapped_code = apply_observable_modifications(original_code)
-
-# Output the transformed code
-print(wrapped_code)

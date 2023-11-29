@@ -115,28 +115,23 @@ class ImportModuleTransformer(ast.NodeTransformer):
         return node
 
 
-def add_imports(source_code: str, wrappers) -> str:
+def add_imports(tree: str, wrappers) -> ast.AST:
     """
     Adds Wrapper imports to each module being transformed. This is meant to be ran
     for each module/file in the process of transformation.
     """
-    tree = ast.parse(source_code)
     transformer = ImportModuleTransformer(tree, "pyggester.observables", wrappers)
     tree = transformer.visit(tree)
 
     return tree
 
 
-# Example usage
-original_code = """
-# from pyggester.wrappers import ObservableDictWrapper, ObservableSetWrapper
-import pyggester.wrappers
-import math 
-import pandas
-import numpy
+# original_code = """
+# # from pyggester.wrappers import ObservableDictWrapper, ObservableSetWrapper
+# import pyggester.wrappers
+# import math 
+# import pandas
+# import numpy
 
-print("Hello, world!")
-"""
-
-# modified_code = add_imports(original_code)
-# print(modified_code)
+# print("Hello, world!")
+# """

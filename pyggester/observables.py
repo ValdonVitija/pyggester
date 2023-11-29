@@ -5,12 +5,20 @@ from message_handler import MessageHandler
 import array
 import inspect
 import pathlib
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Set
 
 OBSERVABLE_RUNNER = []
 
 
 class ObservableList(list):
+    """
+    The ObservableList is an enhanced version of a list that
+    preserves the full original functionality of a list, but
+    adds more features to it so that we keep track of anything that
+    potentially happens in order to do dynamic analysis to each declared
+    list.
+    """
+
     __slots__: Tuple[str] = (
         "appended",
         "extended",
@@ -22,6 +30,8 @@ class ObservableList(list):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        # The following methods keep track of base list methods.
+        # False if not used(ever), True if used
         self.appended: bool = False
         self.extended: bool = False
         self.inserted: bool = False
@@ -118,7 +128,7 @@ class ObservableList(list):
 
         Added checkers should be called here in sequence
         Might need to refactor this to add priority levels and maybe
-        only give a single suggestions, but that needs way more specific analysis
+        only give a single suggestion, but that needs way more specific analysis
         """
         self.check_array_instead_of_list()
         self.check_numpy_array_instead_of_list()
@@ -126,11 +136,84 @@ class ObservableList(list):
         self.message_handler.print_messages()
 
 
+# class ObservableSet(set):
+#     __slots__: Tuple[set] = ()
+
+#     def __init__(self) -> None:
+#         pass
+
+
 class ObservableSet(set):
     __slots__: Tuple[set] = ()
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, iterable=None) -> None:
+        super().__init__(iterable)
+
+    def add(self, element: Any) -> None:
+        super().add(element)
+
+    def clear(self) -> None:
+        super().clear()
+
+    def copy(self) -> Set:
+        return super().copy()
+
+    def difference(self, *others: Set) -> Set:
+        return super().difference(*others)
+
+    def difference_update(self, *others: Set) -> None:
+        super().difference_update(*others)
+
+    def discard(self, element: Any) -> None:
+        super().discard(element)
+
+    def intersection(self, *others: Set) -> Set:
+        return super().intersection(*others)
+
+    def intersection_update(self, *others: Set) -> None:
+        super().intersection_update(*others)
+
+    def isdisjoint(self, other: Set) -> bool:
+        return super().isdisjoint(other)
+
+    def issubset(self, other: Set) -> bool:
+        return super().issubset(other)
+
+    def issuperset(self, other: Set) -> bool:
+        return super().issuperset(other)
+
+    def pop(self) -> Any:
+        return super().pop()
+
+    def remove(self, element: Any) -> None:
+        super().remove(element)
+
+    def symmetric_difference(self, other: Set) -> Set:
+        return super().symmetric_difference(other)
+
+    def symmetric_difference_update(self, other: Set) -> None:
+        super().symmetric_difference_update(other)
+
+    def union(self, *others: Set) -> Set:
+        return super().union(*others)
+
+    def update(self, *others: Set) -> None:
+        super().update(*others)
+
+
+# # Test the ObservableSet
+# observable_set = ObservableSet([1, 2, 3])
+# print(observable_set)
+
+# observable_set.add(4)
+# print(observable_set)
+
+# observable_set.remove(2)
+# print(observable_set)
+
+# other_set = {3, 4, 5}
+# difference = observable_set.difference(other_set)
+# print(difference)
 
 
 class ObservableTuple(tuple):
