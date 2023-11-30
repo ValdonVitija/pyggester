@@ -1,13 +1,19 @@
-from typing import List, Tuple, Dict, Any
+from _collections_abc import dict_items, dict_keys, dict_values
+from typing import List, Tuple, Dict, Any, Iterable
 from collections import namedtuple
 import numpy
 from message_handler import MessageHandler
 import array
+import scipy.sparse as sp
+import pandas as pd
 import inspect
 import pathlib
 from typing import List, Dict, Any, Tuple, Set
 
 OBSERVABLE_RUNNER = []
+
+# TODO MIGHT CONSIDER CREATING AN OBSERVABLE ABSTRACT BASE CLASS,
+# TO MAKE EACH OBSERVABLE FOLLOW A SPECIFIC CONTRACT
 
 
 class ObservableList(list):
@@ -36,6 +42,7 @@ class ObservableList(list):
         self.extended: bool = False
         self.inserted: bool = False
         self.removed: bool = False
+        self.count_: bool = False
         self.in_operator_used: bool = False
         """
         Get the context of the current list being analyzed
@@ -61,6 +68,10 @@ class ObservableList(list):
     def remove(self, item) -> None:
         super().remove(item)
         self.removed = True
+
+    def count(self, __value: Any) -> int:
+        self.count_ = True
+        return super().count(__value)
 
     def __contains__(self, __key: object) -> bool:
         self.in_operator_used = True
@@ -121,6 +132,26 @@ class ObservableList(list):
                     "Consider using a set instead of a list, because of unique elements"
                 )
 
+    def check_Counter_insteaf_of_list(self):
+        if self.count_:
+            self.message_handler.messages.append(
+                "Consider using a collections.Counter, to count occurences of elements"
+            )
+
+    def check_tuple_instead_of_list(self):
+        all__ = []
+        for x in self:
+            if isinstance(x, str):
+                if x.isupper() or x[0].isupper():
+                    all__.append(True)
+
+        if len(all__) == len(self) and not any(
+            [self.appended, self.extended, self.removed, self.inserted]
+        ):
+            self.message_handler.messages.append(
+                "Consider using a tuple since all elements seem to be constants, because the list was never modified"
+            )
+
     def run(self):
         """
         Only run checkers so that we offer a better running interface
@@ -133,114 +164,461 @@ class ObservableList(list):
         self.check_array_instead_of_list()
         self.check_numpy_array_instead_of_list()
         self.check_set_instead_of_list()
+        self.check_Counter_insteaf_of_list()
         self.message_handler.print_messages()
 
 
-# class ObservableSet(set):
-#     __slots__: Tuple[set] = ()
-
-#     def __init__(self) -> None:
-#         pass
-
-
 class ObservableSet(set):
-    __slots__: Tuple[set] = ()
+    """
+    The ObservableSet is an enhanced version of a set that
+    preserves the full original functionality of a set, but
+    adds more features to it so that we keep track of anything that
+    potentially happens in order to do dynamic analysis to each declared
+    set.
+    """
+
+    __slots__: Tuple[set] = (
+        "poped",
+        "removed",
+        "added",
+        "updated",
+        "message_handler",
+        "if_it_was_a_list",
+    )
 
     def __init__(self, iterable=None) -> None:
         super().__init__(iterable)
+        self.poped: bool = False
+        self.removed: bool = False
+        self.added: bool = False
+        self.updated: bool = False
+        self.if_it_was_a_list: List[Any] = []
+
+        caller_frame = inspect.currentframe().f_back
+        line_number: int = caller_frame.f_lineno
+        file_path: str = caller_frame.f_globals["__file__"]
+
+        self.message_handler = MessageHandler(line_nr=line_number, file_path=file_path)
 
     def add(self, element: Any) -> None:
         super().add(element)
-
-    def clear(self) -> None:
-        super().clear()
-
-    def copy(self) -> Set:
-        return super().copy()
-
-    def difference(self, *others: Set) -> Set:
-        return super().difference(*others)
-
-    def difference_update(self, *others: Set) -> None:
-        super().difference_update(*others)
-
-    def discard(self, element: Any) -> None:
-        super().discard(element)
-
-    def intersection(self, *others: Set) -> Set:
-        return super().intersection(*others)
-
-    def intersection_update(self, *others: Set) -> None:
-        super().intersection_update(*others)
-
-    def isdisjoint(self, other: Set) -> bool:
-        return super().isdisjoint(other)
-
-    def issubset(self, other: Set) -> bool:
-        return super().issubset(other)
-
-    def issuperset(self, other: Set) -> bool:
-        return super().issuperset(other)
+        self.added = True
+        self.if_it_was_a_list.append(element)
 
     def pop(self) -> Any:
+        self.poped = True
         return super().pop()
 
     def remove(self, element: Any) -> None:
         super().remove(element)
+        self.removed = True
 
-    def symmetric_difference(self, other: Set) -> Set:
-        return super().symmetric_difference(other)
-
-    def symmetric_difference_update(self, other: Set) -> None:
-        super().symmetric_difference_update(other)
-
-    def union(self, *others: Set) -> Set:
-        return super().union(*others)
-
-    def update(self, *others: Set) -> None:
+    def update(self, *others: Iterable) -> None:
         super().update(*others)
+        self.updated = True
+        for elem_ in others:
+            self.if_it_was_a_list.append(elem_)
 
+    def check_frozenset_instead_of_set(self):
+        if not any([self.added, self.removed, self.updated, self.poped]):
+            self.message_handler.messages.append(
+                "Consider using a frozenset, because no modification operation has been used on set."
+            )
 
-# # Test the ObservableSet
-# observable_set = ObservableSet([1, 2, 3])
-# print(observable_set)
+    def check_list_instead_of_set(self):
+        """
+        The suggestion here is quite subjective.
+        NOTE: Might need to refactor this one
+        """
+        if len(self.if_it_was_a_list) > 1.2 * len(self) and any(
+            [self.added, self.removed, self.updated, self.poped]
+        ):
+            self.message_handler.messages.append(
+                "If you inteded to keep duplicates use a list instead, because we noticed a lot of duplicates entered the set"
+            )
 
-# observable_set.add(4)
-# print(observable_set)
-
-# observable_set.remove(2)
-# print(observable_set)
-
-# other_set = {3, 4, 5}
-# difference = observable_set.difference(other_set)
-# print(difference)
+    def run(self):
+        self.check_frozenset_instead_of_set()
+        self.check_list_instead_of_set()
 
 
 class ObservableTuple(tuple):
-    __slots__: Tuple[set] = ()
+    """
+    The ObservableTuple is an enhanced version of a tuple that
+    preserves the full original functionality of a tuple, but
+    adds more features to it so that we keep track of anything that
+    potentially happens in order to do dynamic analysis to each declared
+    tuple.
+    """
 
-    def __init__(self) -> None:
-        pass
+    __slots__: Tuple[str] = ("mul_", "message_handler")
+
+    def __init__(self, *args: Any) -> None:
+        super().__init__(*args)
+        self.mul_: bool = True
+
+        caller_frame = inspect.currentframe().f_back
+        line_number: int = caller_frame.f_lineno
+        file_path: str = caller_frame.f_globals["__file__"]
+
+        self.message_handler = MessageHandler(line_nr=line_number, file_path=file_path)
+
+    def __mul__(self, n: int) -> "ObservableTuple":
+        result = super().__mul__(n)
+        return result
+
+    def check_mutable_inside_tuple(self):
+        for elem_ in self:
+            if isinstance(elem_, (list, dict, set)):
+                self.message_handler.messages.append(
+                    "Mutable element inside of a tuple. Consider using only immutables for optimal performance"
+                )
+
+    def check_set_instead_of_tuple(self):
+        try:
+            if len(set(self)) == len(self):
+                self.message_handler.messages.append(
+                    "Consider using a set since elements are all unique"
+                )
+        except Exception:
+            pass
+
+    def check_tuple_multiplication(self):
+        if self.mul_:
+            self.message_handler.messages.append(
+                "You multipled the tuple with a scalar value. If you inteded to multiply each element by that value, use a numpy array instead of a tuple."
+            )
+
+    def run(self):
+        self.check_mutable_inside_tuple()
+        self.check_tuple_multiplication()
+        self.check_set_instead_of_tuple()
 
 
 class ObservableDict(dict):
-    __slots__: Tuple[set] = ()
+    """
+    The ObservableDict is an enhanced version of a dict that
+    preserves the full original functionality of a dict, but
+    adds more features to it so that we keep track of anything that
+    potentially happens in order to do dynamic analysis to each declared
+    dict.
+    """
 
-    def __init__(self) -> None:
-        pass
+    __slots__: Tuple[str] = (
+        "keys_",
+        "update_",
+        "setitem_",
+        "delitem_",
+        "getitem_",
+        "pop_",
+        "items_",
+        "clear_",
+        "values_",
+        "message_handler",
+    )
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.keys_: bool = False
+        self.update_: bool = False
+        self.setitem_: bool = False
+        self.delitem_: bool = False
+        self.getitem_: bool = False
+        self.pop_: bool = False
+        self.items_: bool = False
+        self.clear_: bool = False
+        self.values_: bool = False
+
+        caller_frame = inspect.currentframe().f_back
+        line_number: int = caller_frame.f_lineno
+        file_path: str = caller_frame.f_globals["__file__"]
+
+        self.message_handler = MessageHandler(line_nr=line_number, file_path=file_path)
+
+    def __setitem__(self, key, value) -> None:
+        super().__setitem__(key, value)
+        self.setitem_ = True
+
+    def __delitem__(self, key) -> None:
+        super().__delitem__(key)
+        self.delitem_ = True
+
+    def __getitem__(self, __key: Any) -> Any:
+        self.getitem_ = True
+        return super().__getitem__(__key)
+
+    def clear(self) -> None:
+        super().clear()
+        self.clear_ = True
+
+    def pop(self, key, default=None) -> "ObservableDict":
+        result = super().pop(key, default)
+        return result
+
+    def popitem(self) -> "ObservableDict":
+        result = super().popitem()
+        return result
+
+    def update(self, *args, **kwargs) -> None:
+        super().update(*args, **kwargs)
+        self.update_ = True
+
+    def setdefault(self, key, default=None) -> "ObservableDict":
+        result = super().setdefault(key, default)
+        return result
+
+    def copy(self) -> "ObservableDict":
+        result = super().copy()
+        return result
+
+    def keys(self) -> dict_keys:
+        self.keys_ = True
+        return super().keys()
+
+    def values(self) -> dict_values:
+        self.values_ = True
+        return super().values()
+
+    def items(self) -> dict_items:
+        self.items_ = True
+        return super().items()
+
+    def check_Counter_instead_of_dict(self):
+        if all([True for value in self.values() if isinstance(value, int)]):
+            self.message_handler.messages.append(
+                "If you are using this dict to store occurences of elements, consider using a collections.Counter"
+            )
+
+    def check_dict_get_method(self):
+        if self.getitem_:
+            self.message_handler.messages.append(
+                "For dict key retreval, always consider using 'your_dict'.get('key') instead of 'your_dict'['key']"
+            )
+
+    def check_list_instead_of_dict(self):
+        """
+        Suggest to use a list when a dict seems to not be used optimally
+        """
+        if (not any([self.getitem_, self.keys_, self.items_]) and self.values_) or (
+            not any([self.getitem_, self.items_, self.values_]) and self.keys_
+        ):
+            self.message_handler.messages.append(
+                "It seems like you never used this dict for anything otherthan somehow using the values, use a list/array"
+            )
+
+    def run(self):
+        self.check_Counter_instead_of_dict()
+        self.check_dict_get_method()
+        self.check_list_instead_of_dict()
+
+
+class ObservableNumpyArray:
+    """
+    The ObservableNumpyArray is a numpy analyzer that takes the declared numpy array
+    and does internal attribute and value checkings for potential improvement suggestions.
+    """
+
+    __slots__: Tuple[str] = ("arr__", "message_handler")
+
+    def __init__(self, arr__) -> None:
+        self.arr__ = arr__
+
+        caller_frame = inspect.currentframe().f_back
+        line_number: int = caller_frame.f_lineno
+        file_path: str = caller_frame.f_globals["__file__"]
+
+        self.message_handler = MessageHandler(line_nr=line_number, file_path=file_path)
+
+    def check_array_data_type(self):
+        """ """
+        current_dtype = self.arr__.dtype
+        min_dtype = numpy.min_scalar_type(numpy.max(self.arr__))
+        max_number = numpy.max(self.arr__)
+        if current_dtype != min_dtype:
+            self.message_handler.messages.append(
+                f"Array was initiated with {current_dtype} integers, but values do not exceed {max_number}. Consider using {min_dtype} for optimization."
+            )
+
+    def check_array_sparsity(self, threshold: float = 0.9):
+        """Suggests using sparse arrays for highly sparse data to save memory."""
+
+        sparsity = 1.0 - numpy.count_nonzero(self.arr__) / float(self.arr__.size)
+        if sparsity > threshold:
+            try:
+                _ = sp.csr_matrix(self.arr__)
+                self.message_handler.messages.append(
+                    f"The array is highly sparse (sparsity: {sparsity:.2%}). Consider using a sparse array representation for memory efficiency."
+                )
+            except Exception:
+                pass
+
+    def check_for_nan_values(self):
+        """Suggests using masked arrays or handling NaN values."""
+
+        if numpy.isnan(self.arr__).any():
+            try:
+                _ = numpy.ma.masked_array(self.arr__, mask=numpy.isnan(self.arr__))
+                self.message_handler.messages.append(
+                    "The array contains NaN values. Consider using masked arrays or handling NaN values appropriately."
+                )
+            except Exception:
+                pass
+
+    def check_for_monotonicity(self):
+        """Suggests using specialized algorithms or data structures for monotonic arrays."""
+
+        if numpy.all(numpy.diff(self.arr__) >= 0) or numpy.all(
+            numpy.diff(self.arr__) <= 0
+        ):
+            self.message_handler.messages.append(
+                "The array is monotonic. Consider using specialized algorithms or data structures for monotonic arrays."
+            )
+
+    def check_for_categorical_data(self):
+        """Suggests using categorical data types for arrays with a small number of unique values."""
+
+        unique_values_count = len(numpy.unique(self.arr__))
+        if unique_values_count < len(self.arr__) / 2:
+            self.message_handler.messages.append(
+                f"The array contains categorical data with {unique_values_count} unique values. Consider using categorical data types for efficiency, like pd.Categorical()"
+            )
+
+    def check_for_symmetry(self):
+        """Suggests using specialized algorithms or data structures for symmetric arrays."""
+        if numpy.array_equal(self.arr__, self.arr__.T):
+            self.message_handler.messages.append(
+                "The array is symmetric. Consider using specialized algorithms to operate on symmetric arrays, for example functions from scipy"
+            )
+
+    def check_for_constant_values(self):
+        """Suggests using a single value or a constant data type if all elements are the same."""
+        if numpy.all(self.arr__ == self.arr__[0]):
+            self.message_handler.messages.append(
+                "All elements in the array are the same. Consider using a single value, a constant or collections.Counter for memory efficiency."
+            )
+
+    def run(self):
+        self.check_array_data_type()
+        self.check_array_sparsity()
+        self.check_for_categorical_data()
+        self.check_for_constant_values()
+        self.check_for_nan_values()
+        self.check_for_monotonicity()
+        self.check_for_symmetry()
+
+
+class ObservablePandasDataFrame:
+    """
+    The ObservablePandasDataFrame is a Pandas DataFrame analyzer that takes the declared DataFrame
+    and does internal attribute and value checkings for potential improvement suggestions.
+    """
+
+    __slots__ = ("df__", "message_handler")
+
+    def __init__(self, df__) -> None:
+        self.df__ = df__
+
+        caller_frame = inspect.currentframe().f_back
+        line_number: int = caller_frame.f_lineno
+        file_path: str = caller_frame.f_globals["__file__"]
+
+        self.message_handler = MessageHandler(line_nr=line_number, file_path=file_path)
+
+    def check_dataframe_data_types(self):
+        """Suggests optimizing data types for better memory usage."""
+
+        dtypes_optimized = self.df__.copy()
+        for col in self.df__.columns:
+            current_dtype = self.df__[col].dtype
+            min_dtype = numpy.min_scalar_type(numpy.max(self.df__[col]))
+            if current_dtype != min_dtype:
+                dtypes_optimized[col] = pd.to_numeric(
+                    self.df__[col], downcast=min_dtype
+                )
+        if not self.df__.equals(dtypes_optimized):
+            self.message_handler.messages.append(
+                "Consider optimizing data types for better memory usage."
+            )
+
+    def check_dataframe_sparsity(self, threshold: float = 0.9):
+        """Suggests using sparse representations for highly sparse DataFrames to save memory."""
+
+        sparsity = 1.0 - self.df__.stack().count_nonzero() / float(self.df__.size)
+        if sparsity > threshold:
+            try:
+                _ = sp.csr_matrix(self.df__.values)
+                self.message_handler.messages.append(
+                    f"The DataFrame is highly sparse (sparsity: {sparsity:.2%}). Consider using a sparse representation for memory efficiency."
+                )
+            except Exception:
+                pass
+
+    def check_for_missing_values(self):
+        """Suggests handling missing values appropriately."""
+
+        if self.df__.isnull().any().any():
+            self.message_handler.messages.append(
+                "The DataFrame contains missing values. Consider handling missing values appropriately."
+            )
+
+    def check_for_constant_columns(self):
+        """Suggests dropping constant columns for memory efficiency."""
+
+        constant_columns = self.df__.columns[self.df__.nunique() == 1]
+        if constant_columns.any():
+            self.message_handler.messages.append(
+                f"The DataFrame contains constant columns ({constant_columns.tolist()}). Consider dropping them for memory efficiency."
+            )
+    def check_for_duplicate_rows(self):
+        """Suggests handling duplicate rows appropriately."""
+
+        if self.df__.duplicated().any():
+            self.message_handler.messages.append(
+                "The DataFrame contains duplicate rows. Consider handling duplicate rows appropriately."
+            )
+
+    def check_series_insteafd_of_dataframe(self):
+        """Suggests using alternative data structures for specific scenarios."""
+        if len(self.df__.columns) == 1:
+            self.message_handler.messages.append(
+                "Consider using a Series instead of a DataFrame when you have only one column of data."
+            )
+    
+    def check_numpy_instead_of_dataframe(self):
+        """"""
+        if len(self.df__.index) > 10000 and len(self.df__.columns) < 5:
+            self.message_handler.messages.append(
+                "Consider using a NumPy array or a specialized data structure if you have a large number of rows and a small number of columns."
+            )
+
+    def run(self):
+        self.check_dataframe_data_types()
+        self.check_dataframe_sparsity()
+        self.check_for_constant_columns()
+        self.check_for_duplicate_rows()
+        self.check_for_missing_values()
+        self.check_numpy_instead_of_dataframe()
+        self.check_series_insteafd_of_dataframe()
+
+
+class ObservablePandasSeries:
+    pass
 
 
 class ObservableNamedTuple:
+    """
+    The ObservableNamedTuple is an enhanced version of a namedtuple that
+    preserves the full original functionality of a namedtuple, but
+    adds more features to it so that we keep track of anything that
+    potentially happens in order to do dynamic analysis to each declared
+    namedtuple.
+    """
+
     __slots__: Tuple[set] = ("namedtuple__",)
 
     def __init__(self, namedtuple__) -> None:
         self.namedtuple__ = namedtuple__
 
-
-# Car = namedtuple("Car", ObservableList(["brand", "model"]))
-# car_1 = Car(brand="tesla", model="x")
-# car_1_wrapper = ObservableNamedTuple(car_1)
-# print(dir(car_1_wrapper))
 
 my_list = ObservableList([1, 4, 3])
 OBSERVABLE_RUNNER.append(my_list)
