@@ -8,9 +8,9 @@ from rich.markdown import Markdown
 from enum import Enum, auto
 from pyggester.text_formatters import custom_print
 from pyggester.helpers import get_help_files_dir
-from pyggester.pyggester import Pyggester
+from pyggester.pyggester import PyggesterDynamic
 
-__all__: List[str] = ["PyggestStatic", "PyggestDynamic"]
+__all__: List[str] = ["PyggestDynamic"]
 
 README_FILES_DIR: pathlib.Path = get_help_files_dir()
 
@@ -41,7 +41,7 @@ class CommandHandler(abc.ABC):
             Union[None, Exit]: None if the function doesn't return anything, or a Typer Exit object.
         """
         # pylint: disable=E1101
-        if self.HELP_:
+        if self.help_:
             console = Console()
             with open(os.path.join(README_FILES_DIR, self.README)) as readme:
                 markdown = Markdown(readme.read())
@@ -63,83 +63,83 @@ class CommandHandler(abc.ABC):
         raise typer.Exit()
 
 
-class PyggestStatic(CommandHandler):
-    """
-    This class handles the variations of options supported under:
-        pyggest static
-    """
+# class PyggestStatic(CommandHandler):
+#     """
+#     This class handles the variations of options supported under:0
+#         pyggest static
+#     """
 
-    __slots__: ClassVar[Tuple[str]] = (
-        "path_",
-        "lists_",
-        "dicts_",
-        "sets_",
-        "tuples_",
-        "all_",
-        "help_",
-    )
+#     __slots__: ClassVar[Tuple[str]] = (
+#         "path_",
+#         "lists_",
+#         "dicts_",
+#         "sets_",
+#         "tuples_",
+#         "all_",
+#         "help_",
+#     )
 
-    def __init__(
-        self,
-        path_: pathlib.Path,
-        lists_: bool,
-        dicts_: bool,
-        sets_: bool,
-        tuples_: bool,
-        all_: bool,
-        help_: bool,
-    ) -> None:
-        self.path_ = pathlib.Path(path_)
-        self.lists_: bool = lists_
-        self.dicts_: bool = dicts_
-        self.sets_: bool = sets_
-        self.tuples_: bool = tuples_
-        self.all_: bool = all_
-        self.help_: bool = help_
-        self.README = pathlib.Path("static_helper.md")
-        super().__init__()
+#     def __init__(
+#         self,
+#         path_: pathlib.Path,
+#         lists_: bool,
+#         dicts_: bool,
+#         sets_: bool,
+#         tuples_: bool,
+#         all_: bool,
+#         help_: bool,
+#     ) -> None:
+#         self.path_ = pathlib.Path(path_)
+#         self.lists_: bool = lists_
+#         self.dicts_: bool = dicts_
+#         self.sets_: bool = sets_
+#         self.tuples_: bool = tuples_
+#         self.all_: bool = all_
+#         self.help_: bool = help_
+#         self.README = pathlib.Path("static_helper.md")
+#         super().__init__()
 
-    def process(self) -> None:
-        try:
-            pyggester = Pyggester(path_=self.path_)
-            if self.help_:
-                self.handle_help_()
-            self.handle_all_standalone(pyggester)
-            self.handle_chosen_categories(pyggester)
-            self.handle_no_valid_combination()
+#     def process(self) -> None:
+#         try:
+#             pyggester = PyggesterStatic(path_=self.path_)
+#             if self.help_:
+#                 self.handle_help_()
+#             self.handle_all_standalone(pyggester)
+#             self.handle_chosen_categories(pyggester)
+#             self.handle_no_valid_combination()
 
-        except Exception as ex:
-            if isinstance(ex, typer.Exit):
-                raise ex
-            print(ex)
+#         except Exception as ex:
+#             if isinstance(ex, typer.Exit):
+#                 raise ex
+#             print(ex)
 
-    def handle_chosen_categories(self, pyggester):
-        if any([self.lists_, self.dicts_, self.sets_, self.tuples_]) and not self.all_:
-            pyggester.run(self.categories_to_analyze())
-            raise typer.Exit()
+#     def handle_chosen_categories(self, pyggester):
+#         if any([self.lists_, self.dicts_, self.sets_, self.tuples_]) and not self.all_:
+#             pyggester.run(self.categories_to_analyze())
+#             raise typer.Exit()
 
-    def handle_all_standalone(self, pyggester):
-        if self.all_ and not any(
-            [[self.lists_, self.dicts_, self.sets_, self.tuples_]]
-        ):
-            pyggester.run(self.categories_to_analyze())
-            raise typer.Exit()
+#     def handle_all_standalone(self, pyggester):
+#         if self.all_ and not any(
+#             [[self.lists_, self.dicts_, self.sets_, self.tuples_]]
+#         ):
+#             pyggester.run(self.categories_to_analyze())
+#             raise typer.Exit()
 
-    def categories_to_analyze(self):
-        categories_ = set()
-        if self.all_:
-            return ("lists", "tuples", "sets", "dicts")
+#     def categories_to_analyze(self):
+#         categories_ = set()
+#         if self.all_:
+#             return ("lists", "tuples", "sets", "dicts")
 
-        if self.lists_:
-            categories_.add("lists")
-        if self.tuples_:
-            categories_.add("tuples")
-        if self.sets_:
-            categories_.add("sets")
-        if self.dicts_:
-            categories_.add("dicts")
+#         if self.lists_:
+#             categories_.add("lists")
+#         if self.tuples_:
+#             categories_.add("tuples")
+#         if self.sets_:
+#             categories_.add("sets")
+#         if self.dicts_:
+#             categories_.add("dicts")
 
-        return categories_
+#         return categories_
 
 
 class PyggestDynamic(CommandHandler):
@@ -148,11 +148,22 @@ class PyggestDynamic(CommandHandler):
         pyggest dynamic
     """
 
-    __slots__: ClassVar[tuple[str]] = ()
+    __slots__: ClassVar[tuple[str]] = "path_", "help_"
 
-    def __init__(self) -> None:
+    def __init__(self, path_, help_) -> None:
         self.README = pathlib.Path("dynamic_helper.md")
+        self.path_ = path_
+        self.help_ = help_
+
         super().__init__()
 
     def process(self) -> None:
-        pass
+        try:
+            if self.path_:
+                self.handle_help_()
+            pyggester = PyggesterDynamic(self.path_)
+            pyggester.run()
+
+        except Exception as ex:
+            print("asdsda")
+            print(ex)

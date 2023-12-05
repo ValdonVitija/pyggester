@@ -11,7 +11,7 @@ from functools import lru_cache
 from typing import List
 import typer
 from typing_extensions import Annotated
-from pyggester.command_handlers import PyggestDynamic, PyggestStatic
+from pyggester.command_handlers import PyggestDynamic
 from pyggester.helpers import not_implemented
 
 __all__: List[str] = ["get_app"]
@@ -19,11 +19,9 @@ __all__: List[str] = ["get_app"]
 app = typer.Typer(no_args_is_help=True)
 
 
-@app.command(no_args_is_help=True, name="static")
+@app.command(no_args_is_help=False, name="static")
 def static_analysis(
-    path_: Annotated[
-        str, typer.Option("--path", help="Database connection string")
-    ] = None,
+    path_: Annotated[str, typer.Option("--path", help="path to file/files")] = None,
     lists_: Annotated[
         bool,
         typer.Option(
@@ -70,34 +68,17 @@ def static_analysis(
     analyzing Python code. You can specify various options to customize the analysis.
 
     """
-    command_handler = PyggestStatic(
-        path_=path_,
-        lists_=lists_,
-        dicts_=dicts_,
-        sets_=sets_,
-        tuples_=tuples_,
-        all_=all_,
-        help_=help_,
-    )
-    command_handler.process()
+    typer.Exit("Not implemented currently.")
 
 
-@not_implemented
-@app.command(no_args_is_help=True, name="dynamic")
-def dynamic_analysis():
-    """
-    Perform dynamic analysis using PyggestDynamic.
-
-    This command allows you to perform dynamic analysis using PyggestDynamic, a tool for
-    analyzing Python code at runtime.
-
-    Args:
-        ...
-
-    Returns:
-        None
-    """
-    command_handler = PyggestDynamic()
+@app.command(no_args_is_help=True, name="transform")
+def dynamic_transformation(
+    path_: Annotated[str, typer.Argument(help="path to file/files")] = ".",
+    help_: Annotated[
+        bool, typer.Option("--help", help="Get full documentation")
+    ] = False,
+):
+    command_handler = PyggestDynamic(path_=path_, help_=help_)
     command_handler.process()
 
 

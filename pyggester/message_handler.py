@@ -14,6 +14,7 @@ class MessageHandler:
         self.file_path: str = file_path
 
     def print_messages(self) -> None:
-        print(f"{self.line_nr} | Suggestions({self.file_path}):")
-        for message in self.messages:
-            print(f"    [*] {message}")
+        if self.messages:
+            print(f"{self.line_nr} | Suggestions({self.file_path}):")
+            for message in self.messages:
+                print(f"    [*] {message}")

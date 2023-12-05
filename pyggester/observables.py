@@ -2,13 +2,13 @@ from _collections_abc import dict_items, dict_keys, dict_values
 from typing import List, Tuple, Dict, Any, Iterable
 from collections import namedtuple
 import numpy
-from message_handler import MessageHandler
+from pyggester.message_handler import MessageHandler
 import array
 import scipy.sparse as sp
 import pandas as pd
 import inspect
 import pathlib
-from typing import List, Dict, Any, Tuple, Set
+from typing import List, Dict, Any, Tuple, Set, NamedTuple
 
 OBSERVABLE_RUNNER = []
 
@@ -30,6 +30,7 @@ class ObservableList(list):
         "extended",
         "inserted",
         "removed",
+        "count_",
         "in_operator_used",
         "message_handler",
     )
@@ -251,7 +252,7 @@ class ObservableTuple(tuple):
     tuple.
     """
 
-    __slots__: Tuple[str] = ("mul_", "message_handler")
+    # __slots__ = ("mul_", "message_handler")
 
     def __init__(self, *args: Any) -> None:
         super().__init__(*args)
@@ -267,14 +268,14 @@ class ObservableTuple(tuple):
         result = super().__mul__(n)
         return result
 
-    def check_mutable_inside_tuple(self):
+    def check_mutable_inside_tuple(self) -> None:
         for elem_ in self:
             if isinstance(elem_, (list, dict, set)):
                 self.message_handler.messages.append(
                     "Mutable element inside of a tuple. Consider using only immutables for optimal performance"
                 )
 
-    def check_set_instead_of_tuple(self):
+    def check_set_instead_of_tuple(self) -> None:
         try:
             if len(set(self)) == len(self):
                 self.message_handler.messages.append(
@@ -283,13 +284,13 @@ class ObservableTuple(tuple):
         except Exception:
             pass
 
-    def check_tuple_multiplication(self):
+    def check_tuple_multiplication(self) -> None:
         if self.mul_:
             self.message_handler.messages.append(
                 "You multipled the tuple with a scalar value. If you inteded to multiply each element by that value, use a numpy array instead of a tuple."
             )
 
-    def run(self):
+    def run(self) -> None:
         self.check_mutable_inside_tuple()
         self.check_tuple_multiplication()
         self.check_set_instead_of_tuple()
@@ -383,19 +384,19 @@ class ObservableDict(dict):
         self.items_ = True
         return super().items()
 
-    def check_Counter_instead_of_dict(self):
+    def check_Counter_instead_of_dict(self) -> None:
         if all([True for value in self.values() if isinstance(value, int)]):
             self.message_handler.messages.append(
                 "If you are using this dict to store occurences of elements, consider using a collections.Counter"
             )
 
-    def check_dict_get_method(self):
+    def check_dict_get_method(self) -> None:
         if self.getitem_:
             self.message_handler.messages.append(
                 "For dict key retreval, always consider using 'your_dict'.get('key') instead of 'your_dict'['key']"
             )
 
-    def check_list_instead_of_dict(self):
+    def check_list_instead_of_dict(self) -> None:
         """
         Suggest to use a list when a dict seems to not be used optimally
         """
@@ -406,7 +407,7 @@ class ObservableDict(dict):
                 "It seems like you never used this dict for anything otherthan somehow using the values, use a list/array"
             )
 
-    def run(self):
+    def run(self) -> None:
         self.check_Counter_instead_of_dict()
         self.check_dict_get_method()
         self.check_list_instead_of_dict()
@@ -429,7 +430,7 @@ class ObservableNumpyArray:
 
         self.message_handler = MessageHandler(line_nr=line_number, file_path=file_path)
 
-    def check_array_data_type(self):
+    def check_array_data_type(self) -> None:
         """ """
         current_dtype = self.arr__.dtype
         min_dtype = numpy.min_scalar_type(numpy.max(self.arr__))
@@ -439,7 +440,7 @@ class ObservableNumpyArray:
                 f"Array was initiated with {current_dtype} integers, but values do not exceed {max_number}. Consider using {min_dtype} for optimization."
             )
 
-    def check_array_sparsity(self, threshold: float = 0.9):
+    def check_array_sparsity(self, threshold: float = 0.9) -> None:
         """Suggests using sparse arrays for highly sparse data to save memory."""
 
         sparsity = 1.0 - numpy.count_nonzero(self.arr__) / float(self.arr__.size)
@@ -452,7 +453,7 @@ class ObservableNumpyArray:
             except Exception:
                 pass
 
-    def check_for_nan_values(self):
+    def check_for_nan_values(self) -> None:
         """Suggests using masked arrays or handling NaN values."""
 
         if numpy.isnan(self.arr__).any():
@@ -464,7 +465,7 @@ class ObservableNumpyArray:
             except Exception:
                 pass
 
-    def check_for_monotonicity(self):
+    def check_for_monotonicity(self) -> None:
         """Suggests using specialized algorithms or data structures for monotonic arrays."""
 
         if numpy.all(numpy.diff(self.arr__) >= 0) or numpy.all(
@@ -474,7 +475,7 @@ class ObservableNumpyArray:
                 "The array is monotonic. Consider using specialized algorithms or data structures for monotonic arrays."
             )
 
-    def check_for_categorical_data(self):
+    def check_for_categorical_data(self) -> None:
         """Suggests using categorical data types for arrays with a small number of unique values."""
 
         unique_values_count = len(numpy.unique(self.arr__))
@@ -483,21 +484,21 @@ class ObservableNumpyArray:
                 f"The array contains categorical data with {unique_values_count} unique values. Consider using categorical data types for efficiency, like pd.Categorical()"
             )
 
-    def check_for_symmetry(self):
+    def check_for_symmetry(self) -> None:
         """Suggests using specialized algorithms or data structures for symmetric arrays."""
         if numpy.array_equal(self.arr__, self.arr__.T):
             self.message_handler.messages.append(
                 "The array is symmetric. Consider using specialized algorithms to operate on symmetric arrays, for example functions from scipy"
             )
 
-    def check_for_constant_values(self):
+    def check_for_constant_values(self) -> None:
         """Suggests using a single value or a constant data type if all elements are the same."""
         if numpy.all(self.arr__ == self.arr__[0]):
             self.message_handler.messages.append(
                 "All elements in the array are the same. Consider using a single value, a constant or collections.Counter for memory efficiency."
             )
 
-    def run(self):
+    def run(self) -> None:
         self.check_array_data_type()
         self.check_array_sparsity()
         self.check_for_categorical_data()
@@ -524,44 +525,15 @@ class ObservablePandasDataFrame:
 
         self.message_handler = MessageHandler(line_nr=line_number, file_path=file_path)
 
-    def check_dataframe_data_types(self):
-        """Suggests optimizing data types for better memory usage."""
-
-        dtypes_optimized = self.df__.copy()
-        for col in self.df__.columns:
-            current_dtype = self.df__[col].dtype
-            min_dtype = numpy.min_scalar_type(numpy.max(self.df__[col]))
-            if current_dtype != min_dtype:
-                dtypes_optimized[col] = pd.to_numeric(
-                    self.df__[col], downcast=min_dtype
-                )
-        if not self.df__.equals(dtypes_optimized):
-            self.message_handler.messages.append(
-                "Consider optimizing data types for better memory usage."
-            )
-
-    def check_dataframe_sparsity(self, threshold: float = 0.9):
-        """Suggests using sparse representations for highly sparse DataFrames to save memory."""
-
-        sparsity = 1.0 - self.df__.stack().count_nonzero() / float(self.df__.size)
-        if sparsity > threshold:
-            try:
-                _ = sp.csr_matrix(self.df__.values)
-                self.message_handler.messages.append(
-                    f"The DataFrame is highly sparse (sparsity: {sparsity:.2%}). Consider using a sparse representation for memory efficiency."
-                )
-            except Exception:
-                pass
-
-    def check_for_missing_values(self):
+    def check_for_missing_values(self) -> None:
         """Suggests handling missing values appropriately."""
 
         if self.df__.isnull().any().any():
             self.message_handler.messages.append(
-                "The DataFrame contains missing values. Consider handling missing values appropriately."
+                "The DataFrame contains missing values. Consider handling missing values."
             )
 
-    def check_for_constant_columns(self):
+    def check_for_constant_columns(self) -> None:
         """Suggests dropping constant columns for memory efficiency."""
 
         constant_columns = self.df__.columns[self.df__.nunique() == 1]
@@ -569,7 +541,8 @@ class ObservablePandasDataFrame:
             self.message_handler.messages.append(
                 f"The DataFrame contains constant columns ({constant_columns.tolist()}). Consider dropping them for memory efficiency."
             )
-    def check_for_duplicate_rows(self):
+
+    def check_for_duplicate_rows(self) -> None:
         """Suggests handling duplicate rows appropriately."""
 
         if self.df__.duplicated().any():
@@ -577,32 +550,63 @@ class ObservablePandasDataFrame:
                 "The DataFrame contains duplicate rows. Consider handling duplicate rows appropriately."
             )
 
-    def check_series_insteafd_of_dataframe(self):
+    def check_series_insteafd_of_dataframe(self) -> None:
         """Suggests using alternative data structures for specific scenarios."""
         if len(self.df__.columns) == 1:
             self.message_handler.messages.append(
                 "Consider using a Series instead of a DataFrame when you have only one column of data."
             )
-    
-    def check_numpy_instead_of_dataframe(self):
+
+    def check_numpy_instead_of_dataframe(self) -> None:
         """"""
         if len(self.df__.index) > 10000 and len(self.df__.columns) < 5:
             self.message_handler.messages.append(
                 "Consider using a NumPy array or a specialized data structure if you have a large number of rows and a small number of columns."
             )
 
-    def run(self):
-        self.check_dataframe_data_types()
-        self.check_dataframe_sparsity()
+    def run(self) -> None:
         self.check_for_constant_columns()
         self.check_for_duplicate_rows()
         self.check_for_missing_values()
         self.check_numpy_instead_of_dataframe()
         self.check_series_insteafd_of_dataframe()
+        self.message_handler.print_messages()
 
 
-class ObservablePandasSeries:
-    pass
+# data = {
+#     "Name": ["Alice", "Bob", "Charlie", "David"],
+#     "Age": [25, None, 30, 22],
+#     "Salary": [50000, 60000, None, 45000],
+# }
+
+# df = pd.DataFrame(data)
+
+
+# data = {
+#     "Name": ["Alice", "Bob", "Charlie", "David"],
+#     "Age": [25, 30, 22, 28],
+#     "Gender": ["Female", "Male", "Female", "Male"],
+#     "Constant_Column": [1, 1, 1, 1],
+# }
+
+# df = pd.DataFrame(data)
+#####
+
+# data = {
+#     "Name": ["Alice", "Bob", "Charlie", "David", "Alice"],
+#     "Age": [25, 30, 22, 28, 25],
+#     "Gender": ["Female", "Male", "Female", "Male", "Female"],
+# }
+
+# df = pd.DataFrame(data)
+
+
+# data = {"Age": [25, 30, 22, 28]}
+
+# df = pd.DataFrame(data)
+
+# obs = ObservablePandasDataFrame(df)
+# obs.run()
 
 
 class ObservableNamedTuple:
@@ -614,13 +618,51 @@ class ObservableNamedTuple:
     namedtuple.
     """
 
-    __slots__: Tuple[set] = ("namedtuple__",)
+    __slots__: Tuple[set] = ("namedtuple__", "message_handler")
 
     def __init__(self, namedtuple__) -> None:
         self.namedtuple__ = namedtuple__
 
+        caller_frame = inspect.currentframe().f_back
+        line_number: int = caller_frame.f_lineno
+        file_path: str = caller_frame.f_globals["__file__"]
 
-my_list = ObservableList([1, 4, 3])
-OBSERVABLE_RUNNER.append(my_list)
-for observable in OBSERVABLE_RUNNER:
-    observable.run()
+        self.message_handler = MessageHandler(line_nr=line_number, file_path=file_path)
+
+    def check_for_excessive_nesting(self) -> None:
+        """Suggests avoiding excessive nesting of namedtuples."""
+
+        for field_name in self.namedtuple__._fields:
+            if isinstance(getattr(self.namedtuple__, field_name), tuple):
+                self.message_handler.messages.append(
+                    "Avoid excessive nesting of namedtuples to keep the structure simple and readable. Consider usina a class instead"
+                )
+                break
+
+    def check_for_ignoring_type_annotations(self) -> None:
+        """Suggests using type annotations to document the expected types of each field."""
+        class_annotations = getattr(self.namedtuple__, "__annotations__", {})
+        if not class_annotations:
+            self.message_handler.messages.append(
+                "Consider using type annotations for field in namedtuples for better documentation."
+            )
+
+    def check_for_ignoring_namedtuple_advantages(self) -> None:
+        """Suggests taking advantage of the simplicity of namedtuples."""
+
+        if len(self.namedtuple__._fields) > 10:
+            self.message_handler.messages.append(
+                "Consider using namedtuples for simpler data structures with fewer fields for better readability."
+            )
+
+    def run(self):
+        self.check_for_ignoring_type_annotations()
+        self.check_for_ignoring_namedtuple_advantages()
+        self.check_for_excessive_nesting()
+        self.message_handler.print_messages()
+
+
+# my_list = ObservableList([1, 4, 3])
+# OBSERVABLE_RUNNER.append(my_list)
+# for observable in OBSERVABLE_RUNNER:
+# observable.run()

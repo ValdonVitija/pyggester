@@ -21,7 +21,7 @@ def fetch_files(path: Union[str, None]) -> List[Tuple[str | pathlib.Path]]:
         List[str]: A list of the content of Python files to be analyzed.
     """
     ret_files: List[Tuple[str | pathlib.Path]] = []
-    path = pathlib.Path(path) if path else pathlib.Path(".")
+    path = pathlib.Path(path).absolute() if path else pathlib.Path(".")
 
     if path.is_file() and path.suffix == ".py":
         save_file_content_as_str_(path, ret_files)
@@ -121,8 +121,11 @@ def not_implemented(func):
     return wrapper
 
 
-if __name__ == "__main__":
-    files = fetch_files("main.py")
-    for code in files:
-        tree = ast.parse(code)
-        print(ast.dump(tree, indent=4))
+# if __name__ == "__main__":
+#     # path = "test_file.py"
+#     # result = fetch_files(path=path)
+#     # print(result)
+#     files = fetch_files("main.py")
+#     for code in files:
+#         tree = ast.parse(code)
+#         print(ast.dump(tree, indent=4))

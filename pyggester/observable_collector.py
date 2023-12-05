@@ -2,8 +2,8 @@ from _ast import Assign, Module
 import ast
 import astor
 from typing import Any, Tuple
-from module_importer import add_imports
-from wrappers import apply_wrappers, get_wrappers_as_strings
+from pyggester.module_importer import add_imports
+from pyggester.wrappers import apply_wrappers, get_wrappers_as_strings
 
 
 class ObservableCollectorDeclaration(ast.NodeTransformer):
@@ -125,8 +125,11 @@ def apply_observable_collector_transformations(tree: ast.AST) -> str:
     one.
     """
     tree = add_imports(tree, get_wrappers_as_strings())
+    print("after add imports")
     tree = apply_wrappers(tree)
+    print("after apply wrappers")
     tree = apply_observable_collector_modifications(tree)
+    print(tree)
 
     return astor.to_source(tree)
 
@@ -153,18 +156,18 @@ def apply_observable_collector_modifications(tree: ast.AST) -> ast.AST:
     return transformer_runner_tree
 
 
-code = """
-import math
-import random
+# code = """
+# import math
+# import random
 
-list_ = [1,2]
-list_2 = [2,4,3,2,4]
-dict_1 = {}
-def some_function():
-    a = [1,1,1]
+# list_ = [1,2]
+# list_2 = [2,4,3,2,4]
+# dict_1 = {}
+# def some_function():
+#     a = [1,1,1]
 
-"""
+# """
 
-# Parse the code into an AST
-tree = ast.parse(code)
-print(apply_observable_collector_transformations(tree=tree))
+# # Parse the code into an AST
+# tree = ast.parse(code)
+# print(apply_observable_collector_transformations(tree=tree))

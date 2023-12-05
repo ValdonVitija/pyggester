@@ -4,8 +4,8 @@ import inspect
 from astor import to_source
 from typing import Any, ClassVar, Tuple, Union, Set
 import pathlib
-from helpers import source_code_to_str
-from module_importer import add_imports
+from pyggester.helpers import source_code_to_str
+from pyggester.module_importer import add_imports
 
 # from observable_runner import apply_observable_collector_transformations
 
@@ -189,6 +189,162 @@ class ObservableNamedTupleWrapper(ast.NodeTransformer):
         return node
 
 
+# ----------------------------------------------------------
+
+# The following wrappers are third party libraries.
+# List of all supported third party datatypes:
+
+# NumPy Arrays
+# Pandas
+# Polars(soon to be supported)
+# More to be added
+
+# ----------------------------------------------------------
+
+# TODO MIGHT MERGE THE FOLLOWING TWO CLASSES TOGETHER, BECAUSE OF A LOT OF
+# CODE REPETITIONS, OR MAYBE AN ABSTRACT CLASS THAT WILL REQUIRE BOTH OF THEM
+# TO IMPLEMENT SOME SPECIFIC, WHILE OFFERING PRE-IMPLEMENTED FEATURES
+
+
+class ObservableNumpyArrayWrapper(ast.NodeTransformer):
+    """AST transformer to wrap NumPy array instances with ObservableNumpyArray."""
+
+    class NumpyImportsVisitor(ast.NodeVisitor):
+        def __init__(self):
+            self.alias_name = None
+            self.alias_asname = None
+
+        def visit_Import(self, node):
+            """
+            Check numpy imports, because we need to determine how to
+            wrap the initiated array instances
+
+            [*] import numpy
+            [*] import numpy as np
+            [*] import numpy as 'alias'
+            """
+            for name in node.names:
+                if name.name == "numpy":
+                    self.alias_name = name.name
+                if name.name == "numpy" and getattr(name, "asname"):
+                    self.alias_asname = name.asname
+
+        def visit_ImportFrom(self, node):
+            """
+            Check 'from' numpy imports, because we need to determine how to wrao
+            the initiated array instances
+
+            [*] from numpy import array
+            [*] from numpy import array as arr
+            [*] from numpy import ones
+            ...
+            """
+            if node.module == "numpy":
+                for name in node.names:
+                    if name.name in ["array", "zeros", "ones", "empty"]:
+                        self.alias_name = name.name
+                    if getattr(name, "asname"):
+                        self.alias_asname = name.asname
+
+    def __init__(self, tree) -> None:
+        self.imports_visitor = self.NumpyImportsVisitor()
+        self.imports_visitor.visit(tree)
+
+    def visit_Assign(self, node: ast.Assign) -> ast.AST:
+        """
+        Now visit each Assign node and check if that node is a numpy array instance. If thats the case, wrap each instance into an ObservableNumpyArray,
+        so that we can analyze its internal structure for potential suggestions.
+        """
+        if getattr(node, "value") and isinstance(node.value, ast.Call):
+            if getattr(node.value, "func"):
+                if isinstance(node.value.func, ast.Name):
+                    id_ = self.get_alias_name()
+                    if node.value.func.id == id_:
+                        return self.wrap_numpy_array(node)
+
+                elif isinstance(node.value.func, ast.Attribute):
+                    id_ = self.get_alias_name()
+                    if node.value.func.value.id == id_:
+                        return self.wrap_numpy_array(node)
+
+        return node
+
+    def get_alias_name(self):
+        return self.imports_visitor.alias_asname or self.imports_visitor.alias_name
+
+    def wrap_numpy_array(self, node):
+        wrapper_code = f"{node.targets[0].id}_numpy_wrapper = ObservableNumpyArray({node.targets[0].id})"
+        wrapper_node = ast.parse(wrapper_code).body[0]
+        return [node, wrapper_node]
+
+
+class ObservablePandasDataFrameWrapper(ast.NodeTransformer):
+    """AST transformer to wrap Pandas DataFrame instances with ObservablePandasDataFrame"""
+
+    class PandasImportsVisitor(ast.NodeVisitor):
+        def __init__(self):
+            self.alias_name = None
+            self.alias_asname = None
+
+        def visit_Import(self, node):
+            """
+            Check numpy imports, because we need to determine how to
+            wrap the initiated array instances
+
+            [*] import pandas
+            [*] import pandas as pd
+            [*] import pandas as 'alias'
+            """
+            for name in node.names:
+                if name.name == "pandas":
+                    self.alias_name = name.name
+                if name.name == "pandas" and getattr(name, "asname"):
+                    self.alias_asname = name.asname
+
+        def visit_ImportFrom(self, node):
+            """
+            Check 'from' pandas imports, because we need to determine how to wrap
+            the initiated DataFrame instances
+
+            [*] from pandas import DataFrame
+            ...
+            """
+            if node.module == "pandas":
+                for name in node.names:
+                    # Using a list, because we might add some other consturct. Most likely not but..
+                    if name.name in ["DataFrame"]:
+                        self.alias_name = name.name
+                    if getattr(name, "asname"):
+                        self.alias_asname = name.asname
+
+    def __init__(self, tree) -> None:
+        self.imports_visitor = self.PandasImportsVisitor()
+        self.imports_visitor.visit(tree)
+
+    def visit_Assign(self, node: ast.Assign) -> ast.AST:
+        if getattr(node, "value") and isinstance(node.value, ast.Call):
+            if getattr(node.value, "func"):
+                if isinstance(node.value.func, ast.Name):
+                    id_ = self.get_alias_name()
+                    if node.value.func.id == id_:
+                        return self.wrap_numpy_array(node)
+
+                elif isinstance(node.value.func, ast.Attribute):
+                    id_ = self.get_alias_name()
+                    if node.value.func.value.id == id_:
+                        return self.wrap_numpy_array(node)
+
+        return node
+
+    def get_alias_name(self):
+        return self.imports_visitor.alias_asname or self.imports_visitor.alias_name
+
+    def wrap_numpy_array(self, node):
+        wrapper_code = f"{node.targets[0].id}_pandas_wrapper = ObservablePandasDataFrame({node.targets[0].id})"
+        wrapper_node = ast.parse(wrapper_code).body[0]
+        return [node, wrapper_node]
+
+
 class WrapperCollector(ast.NodeVisitor):
     """
     AST visitor to collect class names that are wrappers.
@@ -234,6 +390,11 @@ WRAPPERS = {
         "tuple": ObservableTupleWrapper,
     },
     "collector_containers": {"namedtuple": ObservableNamedTupleWrapper},
+    "third_party": {
+        "numpy_array": ObservableNumpyArrayWrapper,
+        "pandas_dataframe": ObservablePandasDataFrameWrapper,
+        # "pandas_series": ObservablePandasSeriesWrapper,
+    },
 }
 
 
@@ -248,21 +409,23 @@ def apply_wrappers(tree: ast.AST) -> ast.AST:
         tree = wrapper().visit(tree)
     for _, wrapper in WRAPPERS["collector_containers"].items():
         tree = wrapper(tree).visit(tree)
+    for _, wrapper in WRAPPERS["third_party"].items():
+        tree = wrapper(tree).visit(tree)
 
     return tree
 
 
-original_code = """
-import math 
-import nothing 
+# original_code = """
+# import math
+# import nothing
 
-my_list = [1, 2, 3]
-my_dict = {'a': 1, 'b': 2}
-Person = namedtuple('Person'['name', 'age'])
-p1 = Person(name="sdsd", age=22)
-def func1():
-    mapper: {a:1, b:2}
+# my_list = [1, 2, 3]
+# my_dict = {'a': 1, 'b': 2}
+# Person = namedtuple('Person'['name', 'age'])
+# p1 = Person(name="sdsd", age=22)
+# def func1():
+#     mapper: {a:1, b:2}
 
-Car = namedtuple('Car', ['brand','model'])
-car_1 = Car(brand=tesla,model=x)
-"""
+# Car = namedtuple('Car', ['brand','model'])
+# car_1 = Car(brand=tesla,model=x)
+# """
