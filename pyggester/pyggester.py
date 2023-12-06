@@ -6,53 +6,6 @@ from pyggester.observable_collector import apply_observable_collector_transforma
 import pathlib
 
 
-# class PyggesterStatic:
-#     """
-#     Pyggester is a code analysis tool that processes and analyzes code files
-#     based on specified analyzer categories.
-
-#     Attributes:
-#         analyzer_categories (AnalyzerCategories): The categories of analyzers available.
-#         path_ (str): The path to the directory containing code files to analyze.
-#         files_to_analyze (List[Tuple[str | pathlib.Path]]): List of file paths and corresponding code content.
-
-#     """
-
-#     def __init__(self, path_) -> None:
-#         self.path_ = path_
-#         self.files_to_analyze: List[Tuple[str | pathlib.Path]] = fetch_files(path=path_)
-
-#     def run(self, categories_to_analyze) -> None:
-#         """
-#         This is the main function that initializes the process.
-#         It loops through each collected file content/code, it creates a
-#         tree abstraction representation of the code and runs the selected analyzers
-#         """
-#         for file_path, code_ in self.files_to_analyze:
-#             tree = ast.parse(code_)
-#             self.run_analyzers(
-#                 categories_to_analyze=categories_to_analyze,
-#                 tree=tree,
-#                 file_path=file_path,
-#             )
-
-#     def run_analyzers(
-#         self, categories_to_analyze: Set[str] | Tuple[str], tree, file_path
-#     ) -> None:
-#         """
-#         Initialize and apply analyzers based on the type of data_structure.
-#         Args:
-#             data_structure: The data structure to be analyzed.
-#         """
-
-#         for category in categories_to_analyze:
-#             for analyzer_model in getattr(self.analyzer_categories, category):
-#                 analyzer = analyzer_model.Analyzer(file_path)
-#                 analyzer.visit(tree)
-#                 for message in analyzer_model.MessageIterator(analyzer):
-#                     print(message)
-
-
 class PyggesterDynamic:
     __slots__: Tuple[str] = "path_"
 
@@ -69,9 +22,6 @@ class PyggesterDynamic:
             transformed_code = apply_observable_collector_transformations(
                 ast.parse(code)
             )
-            print("=" * 50)
-            print(transformed_code)
-            print("=" * 50)
             self.save_transformed_code(file_path, transformed_code)
 
     def save_transformed_code(self, original_path: pathlib.Path, code: str) -> None:

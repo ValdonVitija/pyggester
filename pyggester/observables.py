@@ -104,16 +104,22 @@ class ObservableList(list):
             )
 
     def can_list_be_converted_to_array(self):
-        """ """
+        """
+        Check if the list can be converted to an array.
+
+        Returns:
+            bool: True if the list can be converted, False otherwise.
+        """
         if all(isinstance(item, int) for item in self):
-            if array.array("i", self):
-                return True
+            return True
         elif all(isinstance(item, float) for item in self):
-            if array.array("d", self):
-                return True
+            return True
         elif all(isinstance(item, str) and len(item) == 1 for item in self):
-            if array.array("c", self):
+            try:
+                array.array("u", self)
                 return True
+            except ValueError:
+                return False
         else:
             return False
 
@@ -252,10 +258,14 @@ class ObservableTuple(tuple):
     tuple.
     """
 
-    # __slots__ = ("mul_", "message_handler")
+    def __new__(cls, *args, **kwargs):
+        # Custom initialization logic can be added here
+        # You can access the original tuple using super().__new__(cls, *args)
+        # Perform any additional setup if needed
+        return super().__new__(cls, *args)
 
-    def __init__(self, *args: Any) -> None:
-        super().__init__(*args)
+    def __init__(self, *args: Any, **kwargs) -> None:
+        super().__init__()
         self.mul_: bool = True
 
         caller_frame = inspect.currentframe().f_back

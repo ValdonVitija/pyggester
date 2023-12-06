@@ -11,7 +11,7 @@ from functools import lru_cache
 from typing import List
 import typer
 from typing_extensions import Annotated
-from pyggester.command_handlers import PyggestDynamic
+from pyggester.command_handlers import PyggestTransform
 from pyggester.helpers import not_implemented
 
 __all__: List[str] = ["get_app"]
@@ -78,7 +78,7 @@ def dynamic_transformation(
         bool, typer.Option("--help", help="Get full documentation")
     ] = False,
 ):
-    command_handler = PyggestDynamic(path_=path_, help_=help_)
+    command_handler = PyggestTransform(path_=path_, help_=help_)
     command_handler.process()
 
 
