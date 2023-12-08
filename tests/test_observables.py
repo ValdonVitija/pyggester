@@ -1,7 +1,8 @@
 import array
-from collections import Counter
-import numpy as np
+from collections import namedtuple
+import numpy
 import pytest
+import pandas as pd
 from pyggester.observables import (
     ObservableList,
     ObservableDict,
@@ -220,6 +221,27 @@ def check_observable_set_additional_attributes_test():
     assert hasattr(obs_set, "message_handler")
 
 
+def test_check_frozenset_instead_of_set():
+    obs_set = ObservableSet({1, 2, 3})
+    obs_set.check_frozenset_instead_of_set()
+    assert (
+        "Consider using a frozenset, because no modification operation has been used on set."
+        in obs_set.message_handler.messages
+    )
+
+
+def test_check_list_instead_of_set():
+    obs_set = ObservableSet({})
+    obs_set.add(1)
+    obs_set.add(1)  # Duplicate
+    obs_set.add(1)  # Duplicate
+    obs_set.check_list_instead_of_set()
+    assert (
+        "If you inteded to keep duplicates use a list instead, because we noticed a lot of duplicates entered the set"
+        in obs_set.message_handler.messages
+    )
+
+
 def test_different_ways_of_tuple_initialization():
     assert isinstance(ObservableTuple((1, 2, 3)), tuple)
     assert isinstance(ObservableTuple(tuple([1, 2, 3])), tuple)
@@ -247,6 +269,34 @@ def check_observable_tuple_additional_attributes_test():
     obs_tuple = ObservableTuple((1, 2, 3))
     assert hasattr(obs_tuple, "mul_")
     assert hasattr(obs_tuple, "message_handler")
+
+
+def test_check_mutable_inside_tuple():
+    obs_tuple = ObservableTuple((1, [2, 3], 4))
+    obs_tuple.check_mutable_inside_tuple()
+    assert (
+        "Mutable element inside of a tuple. Consider using only immutables for optimal performance"
+        in obs_tuple.message_handler.messages
+    )
+
+
+def test_check_set_instead_of_tuple():
+    obs_tuple = ObservableTuple((1, 2, 3))
+    obs_tuple.check_set_instead_of_tuple()
+    assert (
+        "Consider using a set since elements are all unique"
+        in obs_tuple.message_handler.messages
+    )
+
+
+def test_check_tuple_multiplication():
+    obs_tuple = ObservableTuple((1, 2, 3))
+    _ = obs_tuple * 2
+    obs_tuple.check_tuple_multiplication()
+    assert (
+        "You multipled the tuple with a scalar value. If you inteded to multiply each element by that value, use a numpy array instead of a tuple."
+        in obs_tuple.message_handler.messages
+    )
 
 
 def test_different_ways_of_dict_initialization():
@@ -298,3 +348,192 @@ def check_observable_dict_additional_attributes_test():
     assert hasattr(obs_dict, "clear_")
     assert hasattr(obs_dict, "values_")
     assert hasattr(obs_dict, "message_handler")
+
+
+def test_check_Counter_instead_of_dict():
+    obs_dict = ObservableDict(a=1, b=2, c=3)
+    obs_dict.check_Counter_instead_of_dict()
+    assert (
+        "If you are using this dict to store occurences of elements, consider using a collections.Counter"
+        in obs_dict.message_handler.messages
+    )
+
+
+def test_check_dict_get_method():
+    obs_dict = ObservableDict(a=1, b=2, c=3)
+    _ = obs_dict["a"]
+    obs_dict.check_dict_get_method()
+    assert (
+        "For dict key retreval, always consider using 'your_dict'.get('key') instead of 'your_dict'['key']"
+        in obs_dict.message_handler.messages
+    )
+
+
+def test_check_list_instead_of_dict():
+    obs_dict = ObservableDict(a=1, b=2, c=3)
+    _ = obs_dict.values()
+    obs_dict.check_list_instead_of_dict()
+    assert (
+        "It seems like you never used this dict for anything otherthan somehow using the values, use a list/array"
+        in obs_dict.message_handler.messages
+    )
+
+
+def test_check_array_data_type():
+    arr = numpy.array([1, 2, 3], dtype=numpy.int64)
+    obs_array = ObservableNumpyArray(arr)
+    obs_array.check_array_data_type()
+    assert (
+        "Array was initiated with int64 integers, but values do not exceed 3. Consider using uint8 for optimization."
+        in obs_array.message_handler.messages
+    )
+
+
+def test_check_array_sparsity():
+    arr = numpy.array([0, 0, 1, 0, 0, 0, 0, 0, 0, 0])
+    obs_array = ObservableNumpyArray(arr)
+    obs_array.check_array_sparsity()
+    assert (
+        "The array is highly sparse (sparsity: 90.00%). Consider using a sparse array representation for memory efficiency."
+        in obs_array.message_handler.messages
+    )
+
+
+def test_check_for_nan_values():
+    arr = numpy.array([1, numpy.nan, 3])
+    obs_array = ObservableNumpyArray(arr)
+    obs_array.check_for_nan_values()
+    assert (
+        "The array contains NaN values. Consider using masked arrays or handling NaN values appropriately."
+        in obs_array.message_handler.messages
+    )
+
+
+def test_check_for_monotonicity():
+    arr = numpy.array([1, 2, 3, 4, 5])
+    obs_array = ObservableNumpyArray(arr)
+    obs_array.check_for_monotonicity()
+    assert (
+        "The array is monotonic. Consider using specialized algorithms or data structures for monotonic arrays."
+        in obs_array.message_handler.messages
+    )
+
+
+def test_check_for_categorical_data():
+    arr = numpy.array(
+        ["dog", "cat", "dog", "bird", "dog", "cat", "bird", "bird", "cat"]
+    )
+
+    obs_array = ObservableNumpyArray(arr)
+    obs_array.check_for_categorical_data()
+    assert (
+        "The array contains categorical data with 3 unique values. Consider using categorical data types for efficiency, like pd.Categorical()"
+        in obs_array.message_handler.messages
+    )
+
+
+def test_check_for_symmetry():
+    arr = numpy.array([[1, 2], [2, 1]])
+    obs_array = ObservableNumpyArray(arr)
+    obs_array.check_for_symmetry()
+    assert (
+        "The array is symmetric. Consider using specialized algorithms to operate on symmetric arrays, for example functions from scipy"
+        in obs_array.message_handler.messages
+    )
+
+
+def test_check_for_constant_values():
+    arr = numpy.array([1, 1, 1, 1])
+    obs_array = ObservableNumpyArray(arr)
+    obs_array.check_for_constant_values()
+    assert (
+        "All elements in the array are the same. Consider using a single value, a constant or collections.Counter for memory efficiency."
+        in obs_array.message_handler.messages
+    )
+
+
+#####
+
+
+def test_check_for_missing_values():
+    df = pd.DataFrame({"A": [1, 2, None], "B": [4, 5, 6]})
+    observable_df = ObservablePandasDataFrame(df)
+    observable_df.check_for_missing_values()
+    assert (
+        "The DataFrame contains missing values. Consider handling missing values."
+        in observable_df.message_handler.messages
+    )
+
+
+def test_check_for_constant_columns():
+    df = pd.DataFrame({"A": [1, 1, 1], "B": [4, 5, 6]})
+    observable_df = ObservablePandasDataFrame(df)
+    observable_df.check_for_constant_columns()
+    assert (
+        "The DataFrame contains constant columns (['A']). Consider dropping them for memory efficiency."
+        in observable_df.message_handler.messages
+    )
+
+
+def test_check_for_duplicate_rows():
+    df = pd.DataFrame({"A": [1, 2, 2], "B": [4, 5, 5]})
+    observable_df = ObservablePandasDataFrame(df)
+    observable_df.check_for_duplicate_rows()
+    assert (
+        "The DataFrame contains duplicate rows. Consider handling duplicate rows appropriately."
+        in observable_df.message_handler.messages
+    )
+
+
+def test_check_series_instead_of_dataframe():
+    df = pd.DataFrame({"A": [1, 2, 3]})
+    observable_df = ObservablePandasDataFrame(df)
+    observable_df.check_series_insteafd_of_dataframe()
+    assert (
+        "Consider using a Series instead of a DataFrame when you have only one column of data."
+        in observable_df.message_handler.messages
+    )
+
+
+def test_check_numpy_instead_of_dataframe():
+    df = pd.DataFrame({"A": range(15000), "B": range(15000)})
+    observable_df = ObservablePandasDataFrame(df)
+    observable_df.check_numpy_instead_of_dataframe()
+    assert (
+        "Consider using a NumPy array or a specialized data structure if you have a large number of rows and a small number of columns."
+        in observable_df.message_handler.messages
+    )
+
+
+def test_check_for_excessive_nesting():
+    InnerTuple = namedtuple("InnerTuple", "field1 field2")
+    OuterTuple = namedtuple("OuterTuple", "inner")
+    outer_instance = OuterTuple(InnerTuple(1, 2))
+    observable_tuple = ObservableNamedTuple(outer_instance)
+    observable_tuple.check_for_excessive_nesting()
+    assert (
+        "Avoid excessive nesting of namedtuples to keep the structure simple and readable. Consider usina a class instead"
+        in observable_tuple.message_handler.messages
+    )
+
+
+def test_check_for_ignoring_type_annotations():
+    MyTuple = namedtuple("MyTuple", "field1 field2")
+    my_tuple_instance = MyTuple(1, 2)
+    observable_tuple = ObservableNamedTuple(my_tuple_instance)
+    observable_tuple.check_for_ignoring_type_annotations()
+    assert (
+        "Consider using type annotations for field in namedtuples for better documentation."
+        in observable_tuple.message_handler.messages
+    )
+
+
+def test_check_for_ignoring_namedtuple_advantages():
+    ManyFields = namedtuple("ManyFields", " ".join(f"field{i}" for i in range(11)))
+    many_fields_instance = ManyFields(*(range(11)))
+    observable_tuple = ObservableNamedTuple(many_fields_instance)
+    observable_tuple.check_for_ignoring_namedtuple_advantages()
+    assert (
+        "Consider using namedtuples for simpler data structures with fewer fields for better readability."
+        in observable_tuple.message_handler.messages
+    )

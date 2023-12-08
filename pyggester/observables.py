@@ -450,7 +450,7 @@ class ObservableNumpyArray:
                 f"Array was initiated with {current_dtype} integers, but values do not exceed {max_number}. Consider using {min_dtype} for optimization."
             )
 
-    def check_array_sparsity(self, threshold: float = 0.9) -> None:
+    def check_array_sparsity(self, threshold: float = 0.8) -> None:
         """Suggests using sparse arrays for highly sparse data to save memory."""
 
         sparsity = 1.0 - numpy.count_nonzero(self.arr__) / float(self.arr__.size)
@@ -581,42 +581,6 @@ class ObservablePandasDataFrame:
         self.check_numpy_instead_of_dataframe()
         self.check_series_insteafd_of_dataframe()
         self.message_handler.print_messages()
-
-
-# data = {
-#     "Name": ["Alice", "Bob", "Charlie", "David"],
-#     "Age": [25, None, 30, 22],
-#     "Salary": [50000, 60000, None, 45000],
-# }
-
-# df = pd.DataFrame(data)
-
-
-# data = {
-#     "Name": ["Alice", "Bob", "Charlie", "David"],
-#     "Age": [25, 30, 22, 28],
-#     "Gender": ["Female", "Male", "Female", "Male"],
-#     "Constant_Column": [1, 1, 1, 1],
-# }
-
-# df = pd.DataFrame(data)
-#####
-
-# data = {
-#     "Name": ["Alice", "Bob", "Charlie", "David", "Alice"],
-#     "Age": [25, 30, 22, 28, 25],
-#     "Gender": ["Female", "Male", "Female", "Male", "Female"],
-# }
-
-# df = pd.DataFrame(data)
-
-
-# data = {"Age": [25, 30, 22, 28]}
-
-# df = pd.DataFrame(data)
-
-# obs = ObservablePandasDataFrame(df)
-# obs.run()
 
 
 class ObservableNamedTuple:

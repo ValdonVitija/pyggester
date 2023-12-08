@@ -25,7 +25,6 @@ class PyggesterDynamic:
             self.save_transformed_code(file_path, transformed_code)
 
     def save_transformed_code(self, original_path: pathlib.Path, code: str) -> None:
-        print("INSIDE SAVE TRANSFORMED CODE")
         if original_path.is_file():
             new_file_path = self.get_unique_file_path(original_path)
             with open(new_file_path, "w", encoding="UTF-8", errors="ignore") as f:
