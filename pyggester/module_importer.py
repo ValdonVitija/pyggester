@@ -2,8 +2,6 @@ from _ast import Import, ImportFrom
 import ast
 from typing import Any, Tuple, Set
 
-# from wrappers import get_wrappers_as_strings
-
 
 class ImportsVisitor(ast.NodeVisitor):
     """
@@ -115,12 +113,12 @@ class ImportModuleTransformer(ast.NodeTransformer):
         return node
 
 
-def add_imports(tree: str, wrappers) -> ast.AST:
+def add_imports(tree: str, module_, wrappers) -> ast.AST:
     """
     Adds Wrapper imports to each module being transformed. This is meant to be ran
     for each module/file in the process of transformation.
     """
-    transformer = ImportModuleTransformer(tree, "pyggester.observables", wrappers)
+    transformer = ImportModuleTransformer(tree, module_, wrappers)
     tree = transformer.visit(tree)
 
     return tree
@@ -129,7 +127,7 @@ def add_imports(tree: str, wrappers) -> ast.AST:
 # original_code = """
 # # from pyggester.wrappers import ObservableDictWrapper, ObservableSetWrapper
 # import pyggester.wrappers
-# import math 
+# import math
 # import pandas
 # import numpy
 

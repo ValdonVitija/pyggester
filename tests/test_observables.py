@@ -452,9 +452,6 @@ def test_check_for_constant_values():
     )
 
 
-#####
-
-
 def test_check_for_missing_values():
     df = pd.DataFrame({"A": [1, 2, None], "B": [4, 5, 6]})
     observable_df = ObservablePandasDataFrame(df)
