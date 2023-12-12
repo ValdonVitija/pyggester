@@ -9,10 +9,31 @@ from pyggester.observable_transformations import (
 
 
 class PyggesterDynamic:
+    """
+    A class for dynamically transforming files / directories
+    This is the main 'engine' that glues everything together for pyggester to work under 'pyggester transform'
+
+    Args:
+        path_ (str): The path to the file or directory to be transformed.
+
+    Attributes:
+        path_ (pathlib.Path): The absolute path to the file or directory.
+
+    Methods:
+        run(): Runs the transformation process based on the type of path provided.
+        _transform_file(file_path, run_observable): Transforms a single file.
+        _transform_directory(): Transforms all files in a directory.
+    """
+
+    __slots__ = ("path_",)
+
     def __init__(self, path_: str) -> None:
         self.path_ = pathlib.Path(path_).absolute()
 
     def run(self):
+        """
+        Runs the transformation process based on the type of path provided.
+        """
         if not self.path_.exists():
             raise FileNotFoundError(f"The path '{self.path_}' does not exist.")
 
@@ -22,6 +43,23 @@ class PyggesterDynamic:
             self._transform_directory()
 
     def _transform_file(self, file_path: pathlib.Path, run_observable: bool) -> None:
+        """
+        Transforms a single file by applying observable collector transformations.
+
+        This method reads the content of the specified file, applies observable collector transformations
+        to the abstract syntax tree (AST) representation of the code, and writes the transformed code
+        to a new file.
+
+        The observable collector transformations include analyzing and modifying the AST to collect
+        observables and perform any necessary transformations based on the `run_observable` flag.
+
+        Args:
+            file_path (pathlib.Path): The path to the file to be transformed.
+            run_observable (bool): Indicates whether to run observables in the file.
+
+        Returns:
+            None
+        """
         code = file_path.read_text(encoding="UTF-8")
         transformed_code = apply_observable_collector_transformations(
             ast.parse(code), run_observables=run_observable
@@ -32,6 +70,26 @@ class PyggesterDynamic:
         transformed_file_path.write_text(transformed_code, encoding="UTF-8")
 
     def _transform_directory(self) -> None:
+        """
+        Transforms all files in a directory.
+
+        This method takes the name of the main file as input and transforms all the files in the directory
+        specified by `self.path_`. It creates a new directory named "{self.path_.name}_transformed" in the
+        parent directory of `self.path_` to store the transformed files.
+
+        For each file in the directory, it checks if the file path matches the main file path. If it does,
+        the file is considered as the main file and is transformed with the `run_observable` flag set to True.
+        Otherwise, the file is transformed with the `run_observable` flag set to False.
+
+        The transformed file is then moved to the corresponding location in the transformed directory, while
+        preserving the directory structure.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         main_file_name = input("Enter the name of the main file: ")
         main_file_path = self.path_ / main_file_name
 

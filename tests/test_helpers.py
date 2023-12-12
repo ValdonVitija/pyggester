@@ -1,8 +1,5 @@
-import pathlib
-import tempfile
 import pytest
 from pyggester.helpers import (
-    # fetch_files,
     source_code_to_str,
     PathMissingSourceCodeConversionError,
     not_implemented,

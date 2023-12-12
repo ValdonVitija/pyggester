@@ -19,6 +19,7 @@ __all__: List[str] = ["get_app"]
 app = typer.Typer(no_args_is_help=True)
 
 
+# pylint: disable=W0613
 @app.command(no_args_is_help=False, name="static")
 def static_analysis(
     path_: Annotated[str, typer.Option("--path", help="path to file/files")] = None,
@@ -78,6 +79,9 @@ def dynamic_transformation(
         bool, typer.Option("--help", help="Get full documentation")
     ] = False,
 ):
+    """
+    Perform dynamic transformation using PyggesterDynamic.
+    """
     command_handler = PyggestTransform(path_=path_, help_=help_)
     command_handler.process()
 

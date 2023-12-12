@@ -1,45 +1,49 @@
-import unittest
+import pytest
+import tempfile
+import pathlib
 from unittest.mock import patch
-from pathlib import Path
-from pyggester.pyggester import PyggesterDynamic
+from pyggester.pyggester import (
+    PyggesterDynamic,
+)
 
 
-class PyggesterDynamicTestCase(unittest.TestCase):
-    def setUp(self):
-        self.pyggester = PyggesterDynamic("/path/to/files")
+@pytest.fixture
+def temp_dir():
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        yield pathlib.Path(tmpdirname)
 
-    def test_fetch_files(self):
-        with patch.object(PyggesterDynamic, "fetch_files") as mock_fetch_files:
-            mock_fetch_files.return_value = [
-                ("/path/to/file1.py",),
-                ("/path/to/file2.py",),
-                ("/path/to/file3.py",),
-            ]
 
-            files = self.pyggester.fetch_files("/path/to/files")
+@pytest.fixture
+def temp_file(temp_dir):
+    temp_file = temp_dir / "test_file.py"
+    temp_file.write_text("print('Hello, World!')", encoding="UTF-8")
+    return temp_file
 
-            self.assertEqual(len(files), 3)
-            self.assertEqual(files[0], ("/path/to/file1.py",))
-            self.assertEqual(files[1], ("/path/to/file2.py",))
-            self.assertEqual(files[2], ("/path/to/file3.py",))
 
-    def test_transform_as(self):
-        with patch.object(PyggesterDynamic, "transform_as") as mock_transform_as:
-            mock_transform_as.return_value = "transformed code"
+def test_initialization():
+    path = "/path/to/directory"
+    pyggester = PyggesterDynamic(path)
+    assert pyggester.path_ == pathlib.Path(path).absolute()
 
-            code = "original code"
-            # pylint: disable=E1111
-            transformed_code = self.pyggester.transform_as("/path/to/file.py", code)
 
-            self.assertEqual(transformed_code, "transformed code")
+def test_existence_check():
+    with pytest.raises(FileNotFoundError):
+        pyggester = PyggesterDynamic("/non/existent/path")
+        pyggester.run()
 
-    def test_save_transformed_code(self):
-        with patch.object(
-            PyggesterDynamic, "save_transformed_code"
-        ) as mock_save_transformed_code:
-            original_path = Path("/path/to/file.py")
-            code = "transformed code"
 
-            self.pyggester.save_transformed_code(original_path, code)
+def test_file_transformation(temp_file):
+    pyggester = PyggesterDynamic(str(temp_file))
+    pyggester.run()
+    transformed_file = (
+        temp_file.parent / f"{temp_file.stem}_transformed{temp_file.suffix}"
+    )
+    assert transformed_file.exists()
 
-            mock_save_transformed_code.assert_called_once_with(original_path, code)
+
+def test_directory_transformation(temp_dir, temp_file):
+    with patch("builtins.input", return_value="test_file.py"):
+        pyggester = PyggesterDynamic(str(temp_dir))
+        pyggester.run()
+        transformed_dir = temp_dir.parent / f"{temp_dir.name}_transformed"
+        assert transformed_dir.exists() and transformed_dir.is_dir()

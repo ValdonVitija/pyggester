@@ -1,9 +1,5 @@
 import sys
 from pyggester.cli import get_app
-from rich.console import Console
-from rich.markdown import Markdown
-import os
-import pathlib
 
 
 PYGGESTER_LOGO = """

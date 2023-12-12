@@ -1,4 +1,3 @@
-from _ast import Import, ImportFrom
 import ast
 from typing import Any, Tuple, Set
 
@@ -14,6 +13,7 @@ class ImportsVisitor(ast.NodeVisitor):
         """
         Args:
             module_name (str): The name of the module to check for.
+            imported (bool): Whether the module is imported or not.
             names (Set[str]): Names to check for in case of 'from import' (default is None).
         """
         self.module_name = module_name
@@ -122,14 +122,3 @@ def add_imports(tree: str, module_, wrappers) -> ast.AST:
     tree = transformer.visit(tree)
 
     return tree
-
-
-# original_code = """
-# # from pyggester.wrappers import ObservableDictWrapper, ObservableSetWrapper
-# import pyggester.wrappers
-# import math
-# import pandas
-# import numpy
-
-# print("Hello, world!")
-# """

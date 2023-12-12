@@ -5,12 +5,8 @@ import numpy
 from pyggester.message_handler import MessageHandler
 import array
 import scipy.sparse as sp
-import pandas as pd
 import inspect
-import pathlib
 from typing import List, Dict, Any, Tuple, Set, NamedTuple
-
-OBSERVABLE_RUNNER = []
 
 # TODO MIGHT CONSIDER CREATING AN OBSERVABLE ABSTRACT BASE CLASS,
 # TO MAKE EACH OBSERVABLE FOLLOW A SPECIFIC CONTRACT
@@ -259,9 +255,6 @@ class ObservableTuple(tuple):
     """
 
     def __new__(cls, *args, **kwargs):
-        # Custom initialization logic can be added here
-        # You can access the original tuple using super().__new__(cls, *args)
-        # Perform any additional setup if needed
         return super().__new__(cls, *args)
 
     def __init__(self, *args: Any, **kwargs) -> None:
@@ -634,9 +627,3 @@ class ObservableNamedTuple:
         self.check_for_ignoring_namedtuple_advantages()
         self.check_for_excessive_nesting()
         self.message_handler.print_messages()
-
-
-# my_list = ObservableList([1, 4, 3])
-# OBSERVABLE_RUNNER.append(my_list)
-# for observable in OBSERVABLE_RUNNER:
-# observable.run()

@@ -1,7 +1,5 @@
-import array
 from collections import namedtuple
 import numpy
-import pytest
 import pandas as pd
 from pyggester.observables import (
     ObservableList,
@@ -233,8 +231,8 @@ def test_check_frozenset_instead_of_set():
 def test_check_list_instead_of_set():
     obs_set = ObservableSet({})
     obs_set.add(1)
-    obs_set.add(1)  # Duplicate
-    obs_set.add(1)  # Duplicate
+    obs_set.add(1)
+    obs_set.add(1)
     obs_set.check_list_instead_of_set()
     assert (
         "If you inteded to keep duplicates use a list instead, because we noticed a lot of duplicates entered the set"
