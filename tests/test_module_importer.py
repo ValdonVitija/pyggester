@@ -105,5 +105,5 @@ def test_add_imports(wrapper_cls):
     code = "print('Hello, world!')"
     tree = ast.parse(code)
     expected_code = f"from pyggester.observables import {wrapper_cls}\n{code}"
-    transformed_tree = add_imports(tree, [wrapper_cls])
+    transformed_tree = add_imports(tree, "pyggester.observables", [wrapper_cls])
     assert ast.unparse(transformed_tree) == expected_code

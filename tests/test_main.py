@@ -1,9 +1,7 @@
 import sys
 import pytest
 from unittest.mock import patch
-import typer
 from io import StringIO
-from pyggester.cli import get_app
 from pyggester.main import main, PYGGESTER_LOGO
 
 
