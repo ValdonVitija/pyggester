@@ -86,7 +86,6 @@ def apply_observable_collector_transformations(
     tree = add_imports(tree, "pyggester.observable_collector", ["OBSERVABLE_COLLECTOR"])
     tree = apply_wrappers(tree)
     tree = apply_observable_collector_modifications(tree, run_observables)
-    print(tree)
 
     return astor.to_source(tree)
 

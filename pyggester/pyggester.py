@@ -6,6 +6,7 @@ import pathlib
 from pyggester.observable_transformations import (
     apply_observable_collector_transformations,
 )
+from pyggester.text_formatters import custom_print
 
 
 class PyggesterDynamic:
@@ -39,8 +40,10 @@ class PyggesterDynamic:
 
         if self.path_.is_file():
             self._transform_file(self.path_, run_observable=True)
+            custom_print("File transformed successfully!", border_style="green")
         elif self.path_.is_dir():
             self._transform_directory()
+            custom_print("Directory transformed successfully!", border_style="green")
 
     def _transform_file(self, file_path: pathlib.Path, run_observable: bool) -> None:
         """

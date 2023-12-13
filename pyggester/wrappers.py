@@ -7,8 +7,6 @@ import pathlib
 from pyggester.helpers import source_code_to_str
 from pyggester.module_importer import add_imports
 
-# from observable_runner import apply_observable_collector_transformations
-
 
 # ----------------------------------------------------------
 
@@ -413,19 +411,3 @@ def apply_wrappers(tree: ast.AST) -> ast.AST:
         tree = wrapper(tree).visit(tree)
 
     return tree
-
-
-# original_code = """
-# import math
-# import nothing
-
-# my_list = [1, 2, 3]
-# my_dict = {'a': 1, 'b': 2}
-# Person = namedtuple('Person'['name', 'age'])
-# p1 = Person(name="sdsd", age=22)
-# def func1():
-#     mapper: {a:1, b:2}
-
-# Car = namedtuple('Car', ['brand','model'])
-# car_1 = Car(brand=tesla,model=x)
-# """

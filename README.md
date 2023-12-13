@@ -10,11 +10,11 @@
 <h1 align="center">Pyggester - static/dynamic python analysis</h1>
 
 
-# About
+# 📘 About
 
-pyggester - (python + suggester) functions as both a static and dynamic analyzer. Its primary purpose lies in offering suggestions to enhance the efficiency of Python code by addressing suboptimal usage of data structures.
+pyggester - (python + suggester) functions as both a dynamic and static analyzer. Its primary purpose lies in offering suggestions to enhance the efficiency of Python code by addressing suboptimal usage of data structures.
 
-# Features
+# ⭐ Features
 
   Pyggester offers a pretty decent cli interface for its functionalities. The cli is built on top of [typer](https://github.com/tiangolo/typer)
   
@@ -24,7 +24,7 @@ pyggester - (python + suggester) functions as both a static and dynamic analyzer
   ```
   `output`:
   ```
-                                              _____
+                                            _____
 _____________  ________ _______ ______________  /_____________
 ___  __ \_  / / /_  __ `/_  __ `/  _ \_  ___/  __/  _ \_  ___/
 __  /_/ /  /_/ /_  /_/ /_  /_/ //  __/(__  )/ /_ /  __/  /
@@ -40,8 +40,8 @@ _  .___/_\__, / _\__, / _\__, / \___//____/ \__/ \___//_/
 │ --help                        Show this message and exit.                                                                                    │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ dynamic               Perform dynamic analysis using PyggestDynamic.                                                                         │
-│ static                Perform static analysis using PyggestStatic.                                                                           │
+│ static                 Perform static analysis using PyggestStatic.                                                                          │
+│ transform              Perform dynamic transformation using PyggesterDynamic.                                                                │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
   ```
 
@@ -49,39 +49,20 @@ _  .___/_\__, / _\__, / _\__, / \___//____/ \__/ \___//_/
   - Static Analysis: This feature comprehensively examines your code without executing it, providing insightful insights into its structure and potential improvements.
     
     `Execution command`
+
+    > [!NOTE]
+    > The 'static' subcommand exists, but has no functionalities implemented.
+
     ``` bash
     pyggest static
     ```
-    `output`
-    ```bash
-        Usage: pyggest static [OPTIONS]
 
-    This function represents the 'static' subcommand of pyggest
-    Perform static analysis using PyggestStatic.
-    This command allows you to perform static analysis using PyggestStatic, a tool for analyzing Python code.
-    You can specify various options to customize the analysis.
-
-    ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────╮
-    │ --path          TEXT  path to python file/files                                                            │
-    │ --lists               Use this option to include lists in analysis                                         │
-    │ --dicts               Use this option to include dicts in analysis                                         │
-    │ --sets                Use this option to include sets in analysis                                          │
-    │ --tuples              Use this option to include tuples in analysis                                        │
-    │ --all                 If you want pyggester to use all its capabilites use this option                     │
-    │ --HELP                Get full documentation                                                               │
-    │ --help                Show this message and exit.                                                          │
-    ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-    ```
-
-  - Dynamic Analysis: This feature *will* comprehensively examine your code in the process of execution, providing potential suggestions for further code optimizations(mainly related to data structures)
+  - Dynamic/Automatic Transformation: This feature adds extra code to your python files to analyze your data structures at runtime. Your original code stays the same; it won't be changed. A new file is created that's just like the original but with additional code. This works for both single files and whole directories(full project structures).
 
     `Execution command`
 
-    > [!NOTE]
-    > The 'dynamic' subcommand exists, but has no functionalities implemented.
-
     ``` bash
-    pyggest dynamic
+    pyggest transform
     ```
 
     > [!IMPORTANT]
@@ -90,21 +71,13 @@ _  .___/_\__, / _\__, / _\__, / \___//____/ \__/ \___//_/
     >  ```
 
 
-# Available Analyzers
 
-The core functionality of pyggester revolves around analyzers, particularly node visitors that recursively ensure the examination of essential nodes to identify suboptimal usage of data structures. These analyzers attempt to suggest alternative data structures if any issues are detected.
-
-Currently, the supported analyzer is:
-
-  - TupleInsteadOfListAnalyzer
-
-# Installation
+# 🔧 Installation
 
   ### Using Pip
   You can easily install the Python library using pip. Open your terminal and run the following command:
   ```bash
   pip install pyggester
-
   ```
 
 
@@ -128,53 +101,141 @@ Currently, the supported analyzer is:
       pip install .
       ```
 
+# Usage
+
+Since currently only dynamic analysis feature is supported in pyggester, heres how you can use it
+
+Lets suppose you have a single python file that you want to dynamically analyze(runtime analysis)
+
+Before code transformation with pyggester:
+```bash
+(venv) root@user:~/my_app> ls
+app.py
+```
+
+app.py content:
+
+```python
+def sum_of_integers(integer_list):
+    total = sum(integer_list)
+    return total
+
+my_list = [1, 2, 3, 4, 5]
+print(sum_of_integers(my_list))
+
+```
+Running the command:
+> [!IMPORTANT]
+> **Make sure you're in a virtual environment with pyggester installed before going to the next step.**
+
+```bash
+(venv) root@devs04:~/my_app> pyggest transform app.py
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ File transformed successfully!                                                                                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+After code transformation with pyggester:
+
+```bash
+(venv) root@devs04:~/my_app> ls
+app.py  app_transformed.py
+```
+
+app_transformed.py content:
+```python
+from pyggester.observable_collector import OBSERVABLE_COLLECTOR
+from pyggester.observables import ObservableNumpyArray, ObservableNamedTuple, ObservableSet, ObservablePandasDataFrame, ObservableList, ObservableDict, ObservableTuple
 
 
-# Directory Structure
+def sum_of_integers(integer_list):
+    total = sum(integer_list)
+    return total
+
+
+my_list = ObservableList([1, 2, 3, 4, 5])
+OBSERVABLE_COLLECTOR.append(my_list)
+print(sum_of_integers(my_list))
+
+for observable in OBSERVABLE_COLLECTOR:
+    observable.run()
+
+```
+
+> [!IMPORTANT]
+> We now have a new file, automatically created, that mirrors the original file. This new file includes all the contents of the original, plus extra code for analyzing your code during runtime. Instead of running the original 'app.py', you should now run 'app_transformed.py'. Rest assured, everything from 'app.py' is retained in 'app_transformed.py'.
+
+
+```bash
+(venv) root@devs04:~/my_app> python3 app_transformed.py
+line: 10 | Suggestions(/root/my_app/app_transformed.py):
+    [*] Consider using an array.array instead of a list, for optimal memory consumption
+    [*] Consider using a set instead of a list, because of unique elements
+
+```
+
+
+
+
+
+# 📁 Directory Structure
 ```bash
 .
 ├── LICENSE
 ├── README.md #main readme file. The one you are currently reading.
 ├── VERSION #version of pyggester
-├── data  #code files for the purpose of testing the overall execution of pyggester while developing the code
-│   ├── __init__.py 
-│   └── code.py #example file
+├── contributing.md
 ├── pyggester # directory containing the full source code of pyggester
 │   ├── __init__.py
-│   ├── analyzer_iterator_mapping.py #creates a mapping model for analyzers and message iterators(one to one relationship)
-│   ├── analyzers.py #contains the analyzer template and all the analyzers
 │   ├── cli.py #defines the typer cli structure(command & options)
 │   ├── command_handlers.py #Handles subcommands and every option variation per subcommand.
 │   ├── data #data/config files related to pyggester. 
 │   │   └── help_files #build in help files for the pyggester cli
-│   │       ├── __init__.py 
-│   │       ├── dynamic_helper.md #detailed built-in documentation for the dynamic subcommand of pyggest
+│   │       ├── __init__.py
+│   │       ├── transform_helper.md #detailed built-in documentation for the transform subcommand of pyggest
 │   │       └── static_helper.md #detailed built-in documentation for the static subcommand of pyggest
-│   ├── helpers.py #helper functions to be used by other modules
-│   ├── main.py #the entry point of pyggest execution. Initializes the typer cli app and prints the ascii logo of pyggester
-│   ├── message_iterators.py #contains the message iterator template for analyzers and all message iterators
-│   ├── pyggester.py #I like to call this module the engine of this tool because it glues all the different parts together.
-│   ├── syntax_coloring.py #not defined yet
-│   └── text_formatters.py #text formatters mainly for typer. How typer messages get streamed to the standard console
+│   ├── helpers.py  #helper functions to be used by other modules
+│   ├── main.py #The entry point of pyggest execution. Initializes the typer cli app and prints the ascii logo of pyggester
+│   ├── message_handler.py #Manages how the collected messages will be printed to the user.
+│   ├── module_importer.py #Contains the mechanism to automatically import observables
+│   ├── observable_collector.py #Contains the list that will be used to collect all observables.
+│   ├── observable_transformations.py #Contains the mechanism that will automatically add code that collects observables and glues together all ast modules
+│   ├── observables.py #Contains all the defined observables(enhanced version of python collections)
+│   ├── pyggester.py #The 'engine' of pyggester. This module glues everything together
+│   ├── text_formatters.py #Contains text formatters, to beautify text in stdout.
+│   └── wrappers.py #Contains the mechanism that wrap each observable.
+├── pyggester_abstract_execution_flow.png
 ├── pyggester_logo.png
-├── pytest.ini #config file for pytest
-├── requirements.txt #every pyggester dependecy resides here
-├── setup.py #creates the pyggester pacakge and defines pyggest as the entry point command to execute pyggester
+├── pytest.ini #pytest config file
+├── requirements.txt #Every pyggester dependecy resides here
+├── setup.py #Creates the pyggester pacakge and defines pyggest as the entry point command to execute pyggester
 └── tests 
-    └── __init__.py
+    ├── __init__.py
+    ├── test_cli.py
+    ├── test_command_handlers.py
+    ├── test_file.py
+    ├── test_file_transformed.py
+    ├── test_helpers.py
+    ├── test_main.py
+    ├── test_message_handler.py
+    ├── test_module_importer.py
+    ├── test_observable_transformations.py
+    ├── test_observables.py
+    ├── test_pyggester.py
+    └── test_wrappers.py
 ```
 # Abstract Execution Flow
 
 The following flow diagram illustrates key components of Pyggester and provides a comprehensive overview of the execution sequence.
 
-![Alt text](pyggester_abstract_execution_flow.png)
+![Alt text](pyggester-abstract-execution-flow.png)
 
 
-# Contribution
+# 👥 Contribution
 
 To contribute to this project, please refer to the comprehensive  [contribution guide](contributing.md)  for detailed instructions and best practices.
 
-# License
+# ©️ License
 
 MIT License
 

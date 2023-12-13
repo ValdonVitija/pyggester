@@ -4,10 +4,10 @@ Thank you for your interest in contributing to pyggester. Whether you're a devel
 
 ## Getting Started
 
-1. **Fork the Repository:** Start by forking the [Project Repository](link-to-repo) on GitHub. This creates a copy of the project under your GitHub account.
+1. **Fork the Repository:** Start by forking the [Project Repository](https://github.com/ValdonVitija/pyggester) on GitHub. This creates a copy of the project under your GitHub account.
 
     ```bash
-    git clone https://github.com/your-username/project-name.git
+    git clone https://github.com/ValdonVitija/pyggester.git
     ```
 
 2. **Create a Branch:** Move into the project's directory and create a new branch for your contribution:
@@ -19,138 +19,242 @@ Thank you for your interest in contributing to pyggester. Whether you're a devel
 
 ## Making Changes
 
-Changes can encompass various aspects, provided they are reasonable. We welcome modifications to overall logic, naming conventions, hierarchy, and directory structure (with meticulous attention, especially for alterations to the project directory, requiring extreme detail).
+Changes can encompass various aspects, provided they are reasonable. We welcome modifications to overall logic, naming conventions, hierarchy, and directory structure (with meticulous attention, especially for alterations to the project directory).
 
-### Adding new analyzers
+# Wrappers
 
-The current design offers a good template for new analyzers. We have a base abstract class (`Analyzer`) that needs to be derived, while also deriving from `ast.NodeVisitor`.
+Includes classes designed to encapsulate collections within observables. Every observable extends from ast.NodeTransformer, enabling the classes to effectively wrap individual data structures. Each specific wrapper is tailored to implement only the visitor method relevant to the data structure it encapsulates.
 
-#### `Analyzer` - Abstract Class
+Built-in wrappers are all already done, because all we need to do is wrap the original
+data structure declarations with observables.
 
+Example (ObservableListWrapper):
 ```python
-class Analyzer(abc.ABC):
-    """
-    Abstract base class for data structure analyzers.
-    ... (rest of the docstring)
-    """
-    def __init__(self, pathconfig: PathConfig):
-        self.structures__: Dict[str, Dict[str, Union[str, int, bool]]] = {}
-        self.pathconfig: PathConfig = pathconfig
-```
-A new analyzer typically needs to define a series of visitor methods starting from visit_Module.
+class ObservableListWrapper(ast.NodeTransformer):
+    """AST transformer to wrap lists with ObservableList."""
 
-```python
-def visit_Module(self, node: ast.Module) -> Any:
-        self.generic_visit(node)
-```
-The Visit Module is designed to initiate analysis from the top-level construct within the file. Further, integrate additional visitor methods to systematically traverse each essential node during the analysis process.
+    __slots__: Tuple[str] = ()
 
-Organize the logic within the visitor methods and other custom functions to improve the code's readability within the analyzer. Make certain to populate the data structure, 'structures__', with distinct keys and corresponding values. This facilitates later interpretation of any identified suggestions.
+    def visit_List(self, node: ast.List) -> Union[ast.Call, ast.AST]:
+        """
+        Transform a List node to an ObservableList node.
 
-Illustrative Example:
+        Args:
+            node (ast.List): The original List node.
 
-```python
-def visit_ClassDef(self, node: ast.ClassDef) -> Any:
-        self.pathconfig.current_class: str = node.name
-        self.generic_visit(node)
-```
-
-This class performs the same operations as the visit_Module, specifically focusing on Class nodes. Additionally, it updates the value of self.pathconfig.current_class, enabling the tracking of the currently analyzed class. This tracking is crucial, as the entire path from the root_file to the most specific scope serves as a key to uniquely identify each Python data structure encountered.
-
-Continue extending this class by incorporating additional visitor methods to systematically explore each required node in the analysis.
-
-Organize the logic within the visitor methods and other custom functions to enhance the overall readability of the code within the analyzer. Ensure that the structures__ data structure is populated with specific keys and values, facilitating the interpretation of any identified suggestions at a later stage.
-
-For instance:
-
-```python
-class TupleInsteadOfListAnalyzer(Analyzer, ast.NodeVisitor):
-    __slots__: ClassVar[Set[str]] = {
-        "structures__",
-        "pathconfig"
-    }
-
-    def __init__(self, current_module):
-        super().__init__(
-            pathconfig=PathConfig(current_module=current_module),
+        Returns:
+            Union[ast.Call, ast.AST]: The transformed node.
+        """
+        return ast.Call(
+            func=ast.Name(id="ObservableList", ctx=ast.Load()), args=[node], keywords=[]
         )
-
-    def visit_Module(self, node: ast.Module) -> Any:
-        self.generic_visit(node)
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> Any:
-        self.pathconfig.current_class: str = node.name
-        self.generic_visit(node)
-
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
-        self.pathconfig.current_function: str = node.name
-        self.generic_visit(node)
-
-    def visit_For(self, node: ast.For) -> Any:
-        self.generic_visit(node)
-
-    def visit_While(self, node: ast.While) -> Any:
-        self.generic_visit(node)
-
-    def visit_Assign(self, node: ast.Assign) -> Any:
-        for target in node.targets:
-            if isinstance(target, ast.Name) and isinstance(node.value, ast.List):
-                list_name = f"{self.pathconfig.current_module}%{self.pathconfig.current_class}%{self.pathconfig.current_function}%{target.id}"
-                self.structures__[list_name]: Dict[str, bool | int | str] = {
-                    "modified": False,
-                    "line_nr": target.lineno,
-                }
-
-            if isinstance(target, ast.Subscript):
-                for list_, _ in self.structures__.items():
-                    if target.value.id in list_:
-                        self.structures__[list_]["modified"] = True
 ```
-The TupleInsteadOfListAnalyzer serves the specific purpose of recommending the utilization of a tuple instead of a list. This suggestion applies when a list has been declared with a fixed set of values and remains unchanged throughout its existence.
 
-Once all the necessary tasks within the analyzer are complete, the next step is to develop a message iterator specifically for this analyzer. Each message iterator should inherit from a base abstract class called MessageIterator.
+Specialized collections from the collections library in python are a bit different. We cannot directly 'dervie' from them, but we can pass by reference the declared data structure objects to our custom Observables.
 
-#### `MessageIterator`
-```python
-class MessageIterator:
-    """ """
+Such Wrappers are:
+ - ObservableNumpyArrayWrapper
+ - ObservableNamedTupleWrapper
+ - ObservablePandasDataFrameWrapper
 
-    def __init__(self, analyzer: Analyzer, message: str) -> None:
-        self.analyzer = analyzer
-        self.message: str = message
-
-    def __iter__(self) -> Set[str] | NotImplementedError:
-        raise NotImplementedError
-```
-An actual instance of a message iterator is the `TupleInsteadOfListAnalyzerMessageIterator.`
+Example (ObservableNumpyArrayWrapper):
 
 ```python
-class TupleInsteadOfListAnalyzerMessageIterator(MessageIterator):
-    """
-    Message interpreter for tuple instead of list analyzer
-    """
+class ObservableNumpyArrayWrapper(ast.NodeTransformer):
+    """AST transformer to wrap NumPy array instances with ObservableNumpyArray."""
 
-    __slots__: ClassVar[Set[str]] = ["analyzer"]
+    class NumpyImportsVisitor(ast.NodeVisitor):
+        def __init__(self):
+            self.alias_name = None
+            self.alias_asname = None
 
-    def __init__(self, analyzer: Analyzer) -> None:
-        super().__init__(analyzer, "USE A TUPLE INSTEAD OF A LIST")
+        def visit_Import(self, node):
+            """
+            Check numpy imports, because we need to determine how to
+            wrap the initiated array instances
 
-    def __iter__(self):
-        report__ = set()
-        for _, value in self.analyzer.structures__.items():
-            if not value["modified"]:
-                report__.add(f"Line nr: {value['line_nr']} | {self.message}")
+            [*] import numpy
+            [*] import numpy as np
+            [*] import numpy as 'alias'
+            """
+            for name in node.names:
+                if name.name == "numpy":
+                    self.alias_name = name.name
+                if name.name == "numpy" and getattr(name, "asname"):
+                    self.alias_asname = name.asname
 
-        return iter(report__)
+        def visit_ImportFrom(self, node):
+            """
+            Check 'from' numpy imports, because we need to determine how to wrao
+            the initiated array instances
+
+            [*] from numpy import array
+            [*] from numpy import array as arr
+            [*] from numpy import ones
+            ...
+            """
+            if node.module == "numpy":
+                for name in node.names:
+                    if name.name in ["array", "zeros", "ones", "empty"]:
+                        self.alias_name = name.name
+                    if getattr(name, "asname"):
+                        self.alias_asname = name.asname
+
+    def __init__(self, tree) -> None:
+        self.imports_visitor = self.NumpyImportsVisitor()
+        self.imports_visitor.visit(tree)
+
+    def visit_Assign(self, node: ast.Assign) -> ast.AST:
+        """
+        Now visit each Assign node and check if that node is a numpy array instance. If thats the case, wrap each instance into an ObservableNumpyArray,
+        so that we can analyze its internal structure for potential suggestions.
+        """
+        if getattr(node, "value") and isinstance(node.value, ast.Call):
+            if getattr(node.value, "func"):
+                if isinstance(node.value.func, ast.Name):
+                    id_ = self.get_alias_name()
+                    if node.value.func.id == id_:
+                        return self.wrap_numpy_array(node)
+
+                elif isinstance(node.value.func, ast.Attribute):
+                    id_ = self.get_alias_name()
+                    if node.value.func.value.id == id_:
+                        return self.wrap_numpy_array(node)
+
+        return node
+
+    def get_alias_name(self):
+        return self.imports_visitor.alias_asname or self.imports_visitor.alias_name
+
+    def wrap_numpy_array(self, node):
+        wrapper_code = f"{node.targets[0].id}_numpy_wrapper = ObservableNumpyArray({node.targets[0].id})"
+        wrapper_node = ast.parse(wrapper_code).body[0]
+        return [node, wrapper_node]
+
 ```
 
-This design establishes a direct correlation between the analyzer and the corresponding message iterator.
+>[!NOTE]
+> Not every data structure from the collections library has a Wrapper and an Observable version right now. I expect potential contributors to work on them.
 
-In the final step, once the analyzer and message iterator are both completed, the next task is to associate them. This association is performed within the file analyzer_iterator_mapping.py.
 
-Within this file, a Pydantic model is provided, offering a structured way to map each analyzer with its respective message iterator. As each analyzer belongs to a specific group or category, navigate to the MODEL dictionary and include your newly created analyzer. Ensure that you instantiate a new AnalyzerModel object, using the analyzer and message iterator as parameter values. No further changes are necessary for Pyggester to function correctly, as the remaining procedures have been abstracted adequately. 
+# 👀 Observables
+
+The core functionality of pyggester revolves around observables, particularly enhanced versions of python data structures/collections that fully preserve the original functionality offered by these python data structures. These observables attempt to suggest alternative data structures if any issues are detected.
+
+Standard built-in collections/data structures:
+  - list
+  - tuple
+  - set
+  - dict
+
+> [!NOTE]
+> Python's built-in collections can be customized by adding your own methods and variables. This lets you analyze the collection more effectively without changing its basic features.
+
+Specialized collections(part of the collections library):
+  - ChainMap
+  - Counter
+  - OrderedDict
+  - UserDict
+  - UserList
+  - UserString
+  - defaultdict
+  - deque
+  - namedtuple
+
+Third-Party popular collections:
+  - Numpy Arrays
+  - Pandas DataFrame
+  - Pandas Series
+
+
+Abstract Observable Representation (e.g : list):
+```Python
+class ObservableList(list):
+    """
+    The ObservableList is an enhanced version of a list that
+    preserves the full original functionality of a list, but
+    adds more features to it so that we keep track of anything that
+    potentially happens in order to do dynamic analysis to each declared
+    list.
+    """
+    __slots__: Tuple[str] = (
+        "appended",
+        "extended",
+        "inserted",
+        "removed",
+        "count_",
+        "in_operator_used",
+        "message_handler",
+    )
+
+    def __init__(self, *args, **kwargs) -> None:
+      ...
+    def append(self, item) -> None:
+        super().append(item)
+        self.appended = True
+
+    def extend(self, iterable) -> None: ...
+    def insert(self, index, item) -> None: ...
+    def remove(self, item) -> None: ...
+    def count(self, __value: Any) -> int: ...
+    def __contains__(self, __key: object) -> bool: ...
+    def get_list_dimension(self, lst): ...
+    def check_numpy_array_instead_of_list(self): ...
+    def check_array_instead_of_list(self): ...
+    def can_list_be_converted_to_array(self): ...
+    def check_list_to_set_conversion(self): ...
+    def check_set_instead_of_list(self): ...
+    def check_Counter_insteaf_of_list(self): ...
+    def check_tuple_instead_of_list(self): ...
+    def run(self):
+        """
+        Only run checkers so that we offer a better running interface
+        for each observable.
+        """
+        self.check_array_instead_of_list()
+        self.check_numpy_array_instead_of_list()
+        self.check_set_instead_of_list()
+        self.check_Counter_insteaf_of_list()
+        self.message_handler.print_messages()
+
+```
+
+If you make sure to preserve the original functionality of built in collections, the folowing statements are exactly the same:
+```Python
+#List declarations
+list_ = [1,2,3]
+list_ = ObservableList([1,2,3])
+list_ = ObservableList(list([1,2,3]))
+
+#Dict declarations
+dict_ = {"key":"value"}
+dict_ = ObservableDict({"key":"value"})
+dict_ = ObservableDict(dict({"key":"value"}))
+
+#Tuple declarations
+tuple_ = (1,2,3)
+tuple_ = ObservableTuple([1,2,3])
+tuple_ = ObservableTuple(tuple([1,2,3]))
+
+#Set declarations
+set_ = {1,2,3}
+set_ = ObservableSet({1,2,3})
+set_ = ObservableSet(set({1,2,3}))
+```
+
+ Currently, the supported observables are:
+
+  - ObservableList
+  - ObservableSet
+  - ObservableTuple
+  - ObservableDict
+  - ObservableNumpyArray
+  - ObservablePandasDataFrame
+  - ObservableNamedTuple
+
+
 >[!IMPORTANT]
->If you discover a more efficient way to construct analyzers, with benefits in memory usage, computational speed, and code readability, document the process thoroughly, create a pull request, and, if deemed reasonable, we may embark on a significant refactoring phase for all existing analyzers. The goal is to optimize this project to its fullest extent.
+> Other modules in pyggester are more specific and typically remain unchanged unless you're modifying the analysis approach. However, if you discover an improved method for analyzing or observing collections, or for the execution process post-code transformations, you're encouraged to submit a Pull Request (PR) with an explanation of your ideas. Please note that proposals involving substantial changes must be thoroughly documented, and test cases should be provided to demonstrate the advantages of your approach.
 
 
 >[!NOTE]
