@@ -50,8 +50,8 @@ _  .___/_\__, / _\__, / _\__, / \___//____/ \__/ \___//_/
     
     `Execution command`
 
-    > [!NOTE]
-    > The 'static' subcommand exists, but has no functionalities implemented.
+> [!NOTE]
+> The 'static' subcommand exists, but has no functionalities implemented.
 
     ``` bash
     pyggest static
@@ -65,10 +65,10 @@ _  .___/_\__, / _\__, / _\__, / \___//____/ \__/ \___//_/
     pyggest transform
     ```
 
-    > [!IMPORTANT]
-    >  ```bash 
-    >  pyggest static/dynamic --HELP #offers built-in documentation for detailed usage
-    >  ```
+> [!INFO]
+> ```bash 
+> pyggest static/dynamic --HELP #offers built-in documentation for detailed usage
+> ```
 
 
 
@@ -94,8 +94,8 @@ _  .___/_\__, / _\__, / _\__, / \___//____/ \__/ \___//_/
       cd pyggester
       ```
   3. **Install pyggester as a pacakge locally:** 
-      > [!IMPORTANT]
-      > Consider doing this within a virtual environment (venv) if possible.
+> [!IMPORTANT]
+> Consider doing this within a virtual environment (venv) if possible.
 
       ```bash
       pip install .
