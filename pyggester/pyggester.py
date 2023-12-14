@@ -63,14 +63,14 @@ class PyggesterDynamic:
         Returns:
             None
         """
-        code = file_path.read_text(encoding="UTF-8")
+        code = file_path.read_text()
         transformed_code = apply_observable_collector_transformations(
             ast.parse(code), run_observables=run_observable
         )
         transformed_file_path = (
             file_path.parent / f"{file_path.stem}_transformed{file_path.suffix}"
         )
-        transformed_file_path.write_text(transformed_code, encoding="UTF-8")
+        transformed_file_path.write_text(transformed_code)
 
     def _transform_directory(self) -> None:
         """
@@ -102,20 +102,33 @@ class PyggesterDynamic:
         transformed_dir_path = self.path_.parent / f"{self.path_.name}_transformed"
         os.makedirs(transformed_dir_path, exist_ok=True)
 
+        excluded_dirs = {"__pycache__", ".git", ".venv"}
+
         for root, dirs, files in os.walk(self.path_):
+            dirs[:] = [d for d in dirs if d not in excluded_dirs]
             for dir_name in dirs:
                 os.makedirs(transformed_dir_path / dir_name, exist_ok=True)
             for file_name in files:
-                file_path = pathlib.Path(root) / file_name
-                run_observable = file_path == main_file_path
-                self._transform_file(file_path, run_observable=run_observable)
+                if file_name.endswith(".py"):
+                    file_path = pathlib.Path(root) / file_name
+                    run_observable = file_path == main_file_path
+                    self._transform_file(file_path, run_observable=run_observable)
 
-                relative_path = file_path.relative_to(self.path_)
-                transformed_file_path = transformed_dir_path / relative_path
-                transformed_file_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.move(
-                    file_path.with_name(
-                        f"{file_path.stem}_transformed{file_path.suffix}"
-                    ),
-                    transformed_file_path,
-                )
+                    relative_path = file_path.relative_to(self.path_)
+                    transformed_file_path = transformed_dir_path / relative_path
+                    transformed_file_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.move(
+                        file_path.with_name(
+                            f"{file_path.stem}_transformed{file_path.suffix}"
+                        ),
+                        transformed_file_path,
+                    )
+                else:
+                    file_path = pathlib.Path(root) / file_name
+                    relative_path = file_path.relative_to(self.path_)
+                    transformed_file_path = transformed_dir_path / relative_path
+                    transformed_file_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy(
+                        file_path,
+                        transformed_file_path,
+                    )

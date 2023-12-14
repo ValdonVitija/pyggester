@@ -45,6 +45,15 @@ class ObservableListWrapper(ast.NodeTransformer):
             func=ast.Name(id="ObservableList", ctx=ast.Load()), args=[node], keywords=[]
         )
 
+    def visit_Call(self, node: ast.Call) -> Union[ast.Call, ast.AST]:
+        if isinstance(node.func, ast.Name) and node.func.id == "list":
+            return ast.Call(
+                func=ast.Name(id="ObservableList", ctx=ast.Load()),
+                args=[node],
+                keywords=[],
+            )
+        return node
+
 
 class ObservableDictWrapper(ast.NodeTransformer):
     """AST transformer to wrap dicts with ObservableDict."""
@@ -64,6 +73,15 @@ class ObservableDictWrapper(ast.NodeTransformer):
         return ast.Call(
             func=ast.Name(id="ObservableDict", ctx=ast.Load()), args=[node], keywords=[]
         )
+
+    def visit_Call(self, node: ast.Call) -> Union[ast.Call, ast.AST]:
+        if isinstance(node.func, ast.Name) and node.func.id == "dict":
+            return ast.Call(
+                func=ast.Name(id="ObservableDict", ctx=ast.Load()),
+                args=[node],
+                keywords=[],
+            )
+        return node
 
 
 class ObservableTupleWrapper(ast.NodeTransformer):
@@ -87,6 +105,15 @@ class ObservableTupleWrapper(ast.NodeTransformer):
             keywords=[],
         )
 
+    def visit_Call(self, node: ast.Call) -> Union[ast.Call, ast.AST]:
+        if isinstance(node.func, ast.Name) and node.func.id == "tuple":
+            return ast.Call(
+                func=ast.Name(id="ObservableTuple", ctx=ast.Load()),
+                args=[node],
+                keywords=[],
+            )
+        return node
+
 
 class ObservableSetWrapper(ast.NodeTransformer):
     """AST transformer to wrap tuples with ObservableTuple."""
@@ -108,6 +135,15 @@ class ObservableSetWrapper(ast.NodeTransformer):
             args=[node],
             keywords=[],
         )
+
+    def visit_Call(self, node: ast.Call) -> Union[ast.Call, ast.AST]:
+        if isinstance(node.func, ast.Name) and node.func.id == "set":
+            return ast.Call(
+                func=ast.Name(id="ObservableSet", ctx=ast.Load()),
+                args=[node],
+                keywords=[],
+            )
+        return node
 
 
 # ----------------------------------------------------------
