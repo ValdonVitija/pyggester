@@ -65,7 +65,8 @@ _  .___/_\__, / _\__, / _\__, / \___//____/ \__/ \___//_/
     pyggest transform
     ```
 
-> [!INFO] pyggester offers built-in documentation for detailed usage
+> [!INFO]
+> pyggester offers built-in documentation for detailed usage
 
 ```bash
 pyggest static/dynamic --HELP 
