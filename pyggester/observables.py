@@ -120,15 +120,22 @@ class ObservableList(list):
             return False
 
     def check_list_to_set_conversion(self):
-        if len(self) == len(set(self)):
-            return True
-        return False
+        """
+        Check if the list can be converted to a set.
+
+        Returns:
+            bool: True if the list can be converted, False otherwise.
+        """
+        if self.get_list_dimension(self) == 1:
+            if len(self) == len(set(list(self))):
+                return True
+            return False
 
     def check_set_instead_of_list(self):
         if self.check_list_to_set_conversion():
             if self.in_operator_used:
                 self.message_handler.messages.append(
-                    "Consider using a set instead of a list, because of unique elements and elemnt existence checking"
+                    "Consider using a set instead of a list, because of unique elements and element existence checking"
                 )
             else:
                 self.message_handler.messages.append(
@@ -243,6 +250,7 @@ class ObservableSet(set):
     def run(self):
         self.check_frozenset_instead_of_set()
         self.check_list_instead_of_set()
+        self.message_handler.print_messages()
 
 
 class ObservableTuple(tuple):
@@ -259,7 +267,7 @@ class ObservableTuple(tuple):
 
     def __init__(self, *args: Any, **kwargs) -> None:
         super().__init__()
-        self.mul_: bool = True
+        self.mul_: bool = False
 
         caller_frame = inspect.currentframe().f_back
         line_number: int = caller_frame.f_lineno
@@ -268,6 +276,7 @@ class ObservableTuple(tuple):
         self.message_handler = MessageHandler(line_nr=line_number, file_path=file_path)
 
     def __mul__(self, n: int) -> "ObservableTuple":
+        self.mul_ = True
         result = super().__mul__(n)
         return result
 
@@ -280,7 +289,7 @@ class ObservableTuple(tuple):
 
     def check_set_instead_of_tuple(self) -> None:
         try:
-            if len(set(self)) == len(self):
+            if len(set(tuple(self))) == len(self):
                 self.message_handler.messages.append(
                     "Consider using a set since elements are all unique"
                 )
@@ -297,6 +306,7 @@ class ObservableTuple(tuple):
         self.check_mutable_inside_tuple()
         self.check_tuple_multiplication()
         self.check_set_instead_of_tuple()
+        self.message_handler.print_messages()
 
 
 class ObservableDict(dict):
@@ -414,6 +424,7 @@ class ObservableDict(dict):
         self.check_Counter_instead_of_dict()
         self.check_dict_get_method()
         self.check_list_instead_of_dict()
+        self.message_handler.print_messages()
 
 
 class ObservableNumpyArray:
@@ -509,6 +520,7 @@ class ObservableNumpyArray:
         self.check_for_nan_values()
         self.check_for_monotonicity()
         self.check_for_symmetry()
+        self.message_handler.print_messages()
 
 
 class ObservablePandasDataFrame:

@@ -1,5 +1,5 @@
 from pyggester.observable_collector import OBSERVABLE_COLLECTOR
-from pyggester.observables import ObservableTuple, ObservablePandasDataFrame, ObservableNamedTuple, ObservableNumpyArray, ObservableSet, ObservableDict, ObservableList
+from pyggester.observables import ObservableList, ObservableNamedTuple, ObservableSet, ObservableDict, ObservableTuple, ObservableNumpyArray, ObservablePandasDataFrame
 
 
 def func1():

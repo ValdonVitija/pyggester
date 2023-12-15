@@ -25,22 +25,6 @@ class ObservableCollectorAppender(ast.NodeTransformer):
 
     __slots__: Tuple[str] = ()
 
-    # def visit_Assign(self, node: Assign) -> Any:
-    #     print(ast.dump(node, indent=4))
-    #     """
-    #     Each declared collection/structure in python is represented into an Assign node, therefore
-    #     we visit each Assign node and we find every observable so that we can collect them.
-    #     """
-    #     if isinstance(node.value, ast.Call):
-    #         if getattr(node.value, "func") and getattr(node.value.func, "id"):
-    #             print("INSIDE CONDITIONNNNNNNNNNNNN")
-    #             if "Observable" in node.value.func.id:
-    #                 append_to_list_code = (
-    #                     f"""OBSERVABLE_COLLECTOR.append({node.targets[0].id})"""
-    #                 )
-    #                 return [node, ast.parse(append_to_list_code)]
-    #     return node
-
     def visit_Assign(self, node: ast.Assign) -> Any:
         """
         Visit each Assign node to find and collect instances of observable types,
@@ -107,13 +91,9 @@ def apply_observable_collector_transformations(
     one.
     """
     tree = add_imports(tree, "pyggester.observables", get_wrappers_as_strings())
-    # print("after imports")
     tree = add_imports(tree, "pyggester.observable_collector", ["OBSERVABLE_COLLECTOR"])
-    # print("after imports")
     tree = apply_wrappers(tree)
-    # print("after apply wrappers")
     tree = apply_observable_collector_modifications(tree, run_observables)
-    # print("after apply_observable_collector_modifications")
 
     return astor.to_source(tree)
 
