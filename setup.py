@@ -10,13 +10,18 @@ with open("requirements.txt", "r", encoding="UTF-8") as f_stream:
 
 setuptools.setup(
     name="pyggester",
-    version="1.0.0",
-    packages=setuptools.find_packages(),
+    version=open("VERSION").read().strip(),
+    packages=setuptools.find_packages(include=["pyggester", "pyggester.*"]),
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    author="Valdon Vitija",
+    author_email="valdonvitijaa@gmail.com",
+    license="MIT",
     install_requires=install_requires,
     entry_points={
         "console_scripts": [
             "pyggest=pyggester.main:main",
         ],
     },
-    include_package_data=True,
+    package_data={"pyggester": ["data/*", "data/help_files/*"]},
 )
