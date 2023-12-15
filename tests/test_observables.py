@@ -108,7 +108,7 @@ def test_check_set_instead_of_list():
     obs_list.in_operator_used = True
     obs_list.check_set_instead_of_list()
     assert (
-        "Consider using a set instead of a list, because of unique elements and elemnt existence checking"
+        "Consider using a set instead of a list, because of unique elements and element existence checking"
         in obs_list.message_handler.messages
     )
 
