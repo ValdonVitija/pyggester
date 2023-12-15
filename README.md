@@ -7,7 +7,7 @@
     <img alt="Alacritty Logo" src="pyggester_logo.png">
 </p>
 
-<h1 align="center">Pyggester - static/dynamic python analysis</h1>
+<h1 align="center">Pyggester - dynamic/static python analysis</h1>
 
 
 # 📘 About
@@ -51,7 +51,7 @@ _  .___/_\__, / _\__, / _\__, / \___//____/ \__/ \___//_/
     `Execution command`
 
     > [!NOTE]
-    > The 'static' subcommand exists, but has no functionalities implemented.
+    > The 'static' subcommand exists, but has no functionalities implemented, because we already have good static analyzers(pylint, ruff, flake8). In future iterations, should we identify suggestions that can be established through static analysis, we will incorporate them into this feature.
 
     ```bash
     pyggest static
@@ -69,7 +69,8 @@ _  .___/_\__, / _\__, / _\__, / \___//____/ \__/ \___//_/
 > pyggester offers built-in documentation for detailed usage
 
 ```bash
-pyggest static/dynamic --HELP 
+pyggest transform --help 
+pyggest static --help #NOT IMPLEMENTED
 ```
 
 
